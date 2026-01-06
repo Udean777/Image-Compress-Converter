@@ -1,0 +1,16 @@
+services:
+  postgres:
+    # Ganti baris ini:
+    image: postgres:18-alpine 
+    container_name: saas_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: saas_image_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
