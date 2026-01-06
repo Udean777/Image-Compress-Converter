@@ -27,7 +27,6 @@
 		</div>
 	</div>
 
-	<!-- Logout Button -->
 	<form method="POST" action="?/logout">
 		<button
 			type="submit"

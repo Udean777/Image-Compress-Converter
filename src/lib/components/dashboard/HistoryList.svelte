@@ -4,9 +4,9 @@
 
 	interface HistoryItem {
 		id: string;
-		fileName?: string;
-		action?: string;
-		outputUrl?: string;
+		fileName?: string | null;
+		action?: string | null;
+		outputUrl?: string | null;
 	}
 
 	interface Props {
@@ -41,16 +41,11 @@
 					class="rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-200 hover:bg-white/10"
 				>
 					<div class="flex items-center justify-between">
-						<a
-							href={item.outputUrl}
-							download
-							aria-label="Download processed image: {item.fileName || 'Image'}"
-							class="flex items-center gap-3"
-						>
+						<a href={item.outputUrl} download class="flex items-center gap-3">
 							<div
 								class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-slate-600 to-slate-700"
 							>
-								<IconImage size={20} class="text-slate-300" />
+								<IconImage class="h-5 w-5 text-slate-300" />
 							</div>
 							<div>
 								<p class="text-sm font-medium text-white">{item.fileName || 'Image'}</p>
@@ -59,12 +54,8 @@
 						</a>
 						<form method="POST" action="?/delete" use:enhance>
 							<input type="hidden" name="historyId" value={item.id} />
-							<button
-								type="submit"
-								aria-label="Delete history item: {item.fileName || 'Image'}"
-								class="text-violet-400 transition-colors hover:text-red-400"
-							>
-								<IconClose size={18} />
+							<button type="submit" class="text-violet-400 transition-colors hover:text-red-400">
+								<IconClose class="h-5 w-5" />
 							</button>
 						</form>
 					</div>

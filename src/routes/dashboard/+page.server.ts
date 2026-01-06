@@ -8,24 +8,16 @@ import { ProcessType, type ImageFormat } from '$lib/types/image.types';
 const imageService = new ImageService();
 const userService = new UserService();
 
-export const load: PageServerLoad = async ({ cookies, locals }) => {
-	const sessionId = cookies.get('session');
-	if (!sessionId) throw redirect(303, '/login');
+export const load: PageServerLoad = async ({ cookies, parent }) => {
+	// Get user from parent layout
+	const { user } = await parent();
 
 	const session = await prisma.session.findUnique({
-		where: {
-			id: sessionId
-		},
-		include: {
-			user: true
-		}
+		where: { id: cookies.get('session')! },
+		include: { user: true }
 	});
 
-	if (!session) throw redirect(303, '/login');
-
-	const user = session.user;
-
-	const historyRaw = await userService.getUserHistory(user.id);
+	const historyRaw = await userService.getUserHistory(session!.user.id);
 
 	const history = await Promise.all(
 		historyRaw.map(async (item) => {
@@ -39,7 +31,7 @@ export const load: PageServerLoad = async ({ cookies, locals }) => {
 	);
 
 	return {
-		user: { email: user.email, credits: user.credits },
+		user,
 		history
 	};
 };
@@ -48,11 +40,13 @@ export const actions: Actions = {
 	process: async ({ cookies, request }) => {
 		const sessionId = cookies.get('session');
 		if (!sessionId) return fail(401, { message: 'Unauthorized' });
+
 		const session = await prisma.session.findUnique({
 			where: { id: sessionId },
 			include: { user: true }
 		});
 		if (!session) return fail(401, { message: 'Unauthorized' });
+
 		const user = session.user;
 
 		const formData = await request.formData();
@@ -64,7 +58,6 @@ export const actions: Actions = {
 			return fail(400, { message: 'Please upload a valid image' });
 		}
 		if (file.size > 5 * 1024 * 1024) {
-			// Max 5MB
 			return fail(400, { message: 'File size exceeds 5MB limit' });
 		}
 
@@ -110,6 +103,7 @@ export const actions: Actions = {
 	delete: async ({ cookies, request }) => {
 		const sessionId = cookies.get('session');
 		if (!sessionId) return fail(401, { message: 'Unauthorized' });
+
 		const session = await prisma.session.findUnique({
 			where: { id: sessionId },
 			include: { user: true }
@@ -125,7 +119,7 @@ export const actions: Actions = {
 
 		await userService.deleteHistory(historyId, session.user.id);
 
-		return { success: true };
+		return { deleteSuccess: true };
 	},
 
 	logout: async ({ cookies }) => {

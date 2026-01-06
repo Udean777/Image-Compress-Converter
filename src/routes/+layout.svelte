@@ -5,5 +5,13 @@
 	let { children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href={favicon} />
+	<title>Image Studio | Compress & Convert</title>
+	<meta
+		name="description"
+		content="Compress and convert your images instantly with our SaaS tool"
+	/>
+</svelte:head>
+
 {@render children()}
