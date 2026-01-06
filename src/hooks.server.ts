@@ -44,6 +44,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		credits: session.user.credits
 	};
 
+	// Protect dashboard routes
 	if (event.url.pathname.startsWith('/dashboard') && !event.locals.user) {
 		return Response.redirect(new URL('/login', event.url), 303);
 	}

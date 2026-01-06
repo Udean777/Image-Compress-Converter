@@ -1,0 +1,12 @@
+# .dockerignore
+node_modules
+.svelte-kit
+build
+.git
+.gitignore
+*.md
+.env.local
+.env.*.local
+.vscode
+.idea
+*.log
