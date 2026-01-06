@@ -1,4 +1,4 @@
-import type { User } from '../../generated/client';
+import type { User } from '@prisma/client';
 
 export interface IRegisterInput {
 	email: string;

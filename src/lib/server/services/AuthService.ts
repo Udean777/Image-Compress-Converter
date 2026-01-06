@@ -6,7 +6,7 @@ import {
 	type ILoginInput,
 	type IRegisterInput
 } from '$lib/types/auth.types';
-import type { PrismaClient } from '../../../generated/client';
+import type { PrismaClient } from '@prisma/client';
 
 export class AuthService {
 	private db: PrismaClient;
