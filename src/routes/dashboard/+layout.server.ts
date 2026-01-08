@@ -16,7 +16,9 @@ export const load: LayoutServerLoad = async ({ cookies }) => {
 	return {
 		user: {
 			email: session.user.email,
-			credits: session.user.credits
+			credits: session.user.credits,
+			name: session.user.name,
+			avatarUrl: session.user.avatarUrl
 		}
 	};
 };

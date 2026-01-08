@@ -28,7 +28,7 @@
 		"@types/node": "^25.0.3",
 		"@types/pg": "^8.16.0",
 		"@types/sharp": "^0.32.0",
-		"bits-ui": "^2.14.4",
+		"bits-ui": "^1.0.0-next.98",
 		"clsx": "^2.1.1",
 		"prettier": "^3.7.4",
 		"prettier-plugin-svelte": "^3.4.0",
@@ -47,10 +47,13 @@
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.962.0",
 		"@aws-sdk/s3-request-presigner": "^3.962.0",
-		"@lucide/svelte": "^0.562.0",
+		"@lucide/svelte": "^0.561.0",
 		"@prisma/adapter-pg": "^7.2.0",
 		"@prisma/client": "^7.2.0",
+		"@types/bcryptjs": "^3.0.0",
+		"bcryptjs": "^3.0.3",
 		"pg": "^8.16.3",
-		"sharp": "^0.34.5"
+		"sharp": "^0.34.5",
+		"svelte-easy-crop": "^5.0.0"
 	}
 }

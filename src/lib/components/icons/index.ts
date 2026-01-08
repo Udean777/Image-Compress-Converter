@@ -10,5 +10,16 @@ export {
 	Clock as IconClock,
 	X as IconClose,
 	Inbox as IconInbox,
-	LogOut as IconLogout
+	LogOut as IconLogout,
+	User as IconUser,
+	Lock as IconLock,
+	Trash2 as IconTrash,
+	Loader2 as IconLoader,
+	Sun as IconSun,
+	Moon as IconMoon,
+	Settings as IconSettings,
+	History as IconHistory,
+	LayoutDashboard as IconDashboard,
+	Menu as IconMenu,
+	ChevronLeft as IconChevronLeft
 } from '@lucide/svelte';

@@ -123,15 +123,7 @@ export const actions: Actions = {
 	},
 
 	logout: async ({ cookies }) => {
-		const sessionId = cookies.get('session');
-		if (sessionId) {
-			await prisma.session
-				.delete({
-					where: { id: sessionId }
-				})
-				.catch(() => {});
-		}
-		cookies.delete('session', { path: '/' });
-		throw redirect(303, '/login');
+		const { performLogout } = await import('$lib/server/auth');
+		await performLogout(cookies);
 	}
 };

@@ -6,6 +6,8 @@ declare global {
 				id: string;
 				email: string;
 				credits: number;
+				name: string | null;
+				avatarUrl: string | null;
 			} | null;
 			session: {
 				id: string;

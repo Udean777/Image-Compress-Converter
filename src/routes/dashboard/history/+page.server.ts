@@ -2,7 +2,7 @@ import { UserService } from '$lib/server/services/UserService';
 import { ImageService } from '$lib/server/services/ImageService';
 import { prisma } from '$lib/server/db';
 import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 const userService = new UserService();
 const imageService = new ImageService();
@@ -33,4 +33,11 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	);
 
 	return { history };
+};
+
+export const actions: Actions = {
+	logout: async ({ cookies }) => {
+		const { performLogout } = await import('$lib/server/auth');
+		await performLogout(cookies);
+	}
 };

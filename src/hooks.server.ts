@@ -1,5 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db';
+import { ensurePublicBucket } from '$lib/server/s3';
+
+// Ensure S3 bucket is configured correctly
+ensurePublicBucket().catch(console.error);
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const sessionId = event.cookies.get('session');
@@ -41,7 +45,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.user = {
 		id: session.user.id,
 		email: session.user.email,
-		credits: session.user.credits
+		credits: session.user.credits,
+		name: session.user.name,
+		avatarUrl: session.user.avatarUrl
 	};
 
 	// Protect dashboard routes

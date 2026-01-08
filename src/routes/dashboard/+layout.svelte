@@ -1,58 +1,88 @@
 <script lang="ts">
 	import type { LayoutProps } from './$types';
-	import { IconStar, IconLogout } from '$lib/components/icons';
+	import { Sidebar, Header } from '$lib/components/dashboard';
+	import { IconLogout } from '$lib/components/icons';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button } from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
 
 	let { data, children }: LayoutProps = $props();
+
+	// Dark mode state
+	let isDarkMode = $state(true);
+
+	// Sidebar collapsed state
+	let sidebarCollapsed = $state(false);
+
+	// Logout confirmation dialog
+	let showLogoutDialog = $state(false);
+
+	function toggleDarkMode() {
+		isDarkMode = !isDarkMode;
+	}
+
+	function toggleSidebar() {
+		sidebarCollapsed = !sidebarCollapsed;
+	}
 </script>
 
-<div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-	<!-- Navbar -->
-	<nav
-		class="sticky top-0 z-50 border-b border-white/10 bg-slate-900/80 px-6 py-4 backdrop-blur-xl"
+<div class="flex min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
+	<!-- Sidebar Component -->
+	<Sidebar
+		credits={data.user.credits}
+		collapsed={sidebarCollapsed}
+		onToggleCollapse={toggleSidebar}
+	/>
+
+	<!-- Main content area -->
+	<div
+		class="flex flex-1 flex-col transition-all duration-300 {sidebarCollapsed ? 'ml-20' : 'ml-64'}"
 	>
-		<div class="mx-auto flex max-w-6xl items-center justify-between">
-			<!-- Logo -->
-			<div class="flex items-center gap-3">
-				<div
-					class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-violet-500 to-purple-600 shadow-lg"
-				>
-					<span class="text-lg font-bold text-white">IS</span>
-				</div>
-				<h1 class="text-xl font-bold text-white">Image Studio</h1>
+		<!-- Header Component -->
+		<Header user={data.user} {isDarkMode} onToggleDarkMode={toggleDarkMode}>
+			{#snippet logoutForm()}
+				<button type="button" onclick={() => (showLogoutDialog = true)} class="w-full text-left">
+					<DropdownMenu.Item class="text-red-400 focus:bg-red-500/10 focus:text-red-400">
+						<IconLogout class="mr-2 h-4 w-4" />
+						Logout
+					</DropdownMenu.Item>
+				</button>
+			{/snippet}
+		</Header>
+
+		<!-- Main Content -->
+		<main class="flex-1 p-6 md:p-10">
+			<div class="mx-auto max-w-6xl">
+				{@render children()}
 			</div>
-			<!-- User Info -->
-			<div class="flex items-center gap-4">
-				<div
-					class="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2"
-				>
-					<IconStar class="h-4 w-4 text-amber-400" />
-					<span class="text-sm font-semibold text-amber-400">{data.user.credits} Credits</span>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-sm font-semibold text-white"
-					>
-						{data.user.email.charAt(0).toUpperCase()}
-					</div>
-					<span class="hidden text-sm text-white/80 md:block">{data.user.email}</span>
-				</div>
-				<form method="POST" action="?/logout" use:enhance>
-					<button
-						type="submit"
-						class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
-						title="Logout"
-					>
-						<IconLogout class="h-4 w-4" />
-					</button>
-				</form>
-			</div>
-		</div>
-	</nav>
-	<!-- Main Content -->
-	<main class="p-6 md:p-10">
-		<div class="mx-auto max-w-6xl">
-			{@render children()}
-		</div>
-	</main>
+		</main>
+	</div>
 </div>
+
+<!-- Logout Confirmation Dialog -->
+<Dialog.Root bind:open={showLogoutDialog}>
+	<Dialog.Content class="border-white/10 bg-slate-900 sm:max-w-md">
+		<Dialog.Header>
+			<Dialog.Title class="text-white">Confirm Logout</Dialog.Title>
+			<Dialog.Description class="text-slate-400">
+				Are you sure you want to logout? You will need to sign in again to access your account.
+			</Dialog.Description>
+		</Dialog.Header>
+		<Dialog.Footer class="flex gap-3 sm:justify-end">
+			<Button
+				variant="outline"
+				onclick={() => (showLogoutDialog = false)}
+				class="border-white/10 bg-transparent text-white hover:bg-white"
+			>
+				Cancel
+			</Button>
+			<form method="POST" action="?/logout" use:enhance>
+				<Button type="submit" variant="destructive" class="bg-red-600 text-white hover:bg-red-700">
+					<IconLogout class="mr-2 h-4 w-4" />
+					Logout
+				</Button>
+			</form>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

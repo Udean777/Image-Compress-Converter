@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { ImageUploadForm, ProcessResult, HistoryList } from '$lib/components/dashboard';
+	import { IconLogout, IconStar } from '$lib/components/icons';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button } from '$lib/components/ui/button';
+	import { enhance } from '$app/forms';
 
 	let { data, form }: PageProps = $props();
 
