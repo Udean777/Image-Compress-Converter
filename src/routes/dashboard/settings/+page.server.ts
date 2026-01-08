@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
-		throw redirect(302, '/login');
+		throw redirect(302, '/');
 	}
 
 	const user = await db.user.findUnique({
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	if (!user) {
-		throw redirect(302, '/login');
+		throw redirect(302, '/');
 	}
 
 	return {
@@ -213,7 +213,7 @@ export const actions: Actions = {
 			return fail(500, { message: 'Failed to delete account' });
 		}
 
-		throw redirect(302, '/login');
+		throw redirect(302, '/');
 	},
 
 	logout: async ({ cookies }) => {

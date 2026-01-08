@@ -56,7 +56,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Protect dashboard routes
 	if (event.url.pathname.startsWith('/dashboard') && !event.locals.user) {
-		return Response.redirect(new URL('/login', event.url), 303);
+		return Response.redirect(new URL('/', event.url), 303);
 	}
 
 	return resolve(event);

@@ -8,7 +8,7 @@ const userService = new UserService();
 const imageService = new ImageService();
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) throw redirect(303, '/login');
+	if (!locals.user) throw redirect(303, '/');
 
 	const historyRaw = await userService.getUserHistory(locals.user.id);
 
@@ -31,5 +31,42 @@ export const actions: Actions = {
 	logout: async ({ cookies }) => {
 		const { performLogout } = await import('$lib/server/auth');
 		await performLogout(cookies);
+	},
+	delete: async ({ request, locals }) => {
+		if (!locals.user) throw redirect(303, '/');
+		const formData = await request.formData();
+		const id = formData.get('id') as string;
+
+		if (!id) return { success: false, message: 'ID is required' };
+
+		try {
+			await userService.deleteHistory(id, locals.user.id);
+			return { success: true };
+		} catch (error) {
+			console.error('Delete error:', error);
+			return { success: false, message: 'Failed to delete' };
+		}
+	},
+	bulkDelete: async ({ request, locals }) => {
+		if (!locals.user) throw redirect(303, '/');
+		const formData = await request.formData();
+		const idsString = formData.get('ids') as string;
+
+		if (!idsString) return { success: false, message: 'IDs are required' };
+
+		const ids = idsString.split(',');
+
+		try {
+			await prisma.history.deleteMany({
+				where: {
+					id: { in: ids },
+					userId: locals.user.id
+				}
+			});
+			return { success: true };
+		} catch (error) {
+			console.error('Bulk delete error:', error);
+			return { success: false, message: 'Failed to delete items' };
+		}
 	}
 };

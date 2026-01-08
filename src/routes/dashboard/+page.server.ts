@@ -10,7 +10,7 @@ const userService = new UserService();
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { user } = await parent();
-	if (!locals.user) throw redirect(303, '/login');
+	if (!locals.user) throw redirect(303, '/');
 
 	const historyRaw = await userService.getUserHistory(locals.user.id);
 

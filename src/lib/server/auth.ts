@@ -13,5 +13,5 @@ export async function performLogout(cookies: Cookies) {
 	}
 	cookies.delete('access_token', { path: '/' });
 	cookies.delete('refresh_token', { path: '/' });
-	throw redirect(303, '/login');
+	throw redirect(303, '/');
 }

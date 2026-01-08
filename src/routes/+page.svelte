@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+	const user = $derived(data.user);
 </script>
 
 <div class="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -26,13 +30,22 @@
 				<span class="text-xl font-bold text-white">Image Studio</span>
 			</div>
 			<div class="flex items-center gap-4">
-				<a href="/login" class="text-gray-300 transition-colors hover:text-white">Login</a>
-				<Button
-					href="/login"
-					class="border-0 bg-linear-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-				>
-					Get Started
-				</Button>
+				{#if user}
+					<Button
+						href="/dashboard"
+						class="border-0 bg-linear-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+					>
+						Dashboard
+					</Button>
+				{:else}
+					<a href="/login" class="text-gray-300 transition-colors hover:text-white">Login</a>
+					<Button
+						href="/register"
+						class="border-0 bg-linear-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+					>
+						Get Started
+					</Button>
+				{/if}
 			</div>
 		</div>
 	</nav>
@@ -60,24 +73,45 @@
 			</p>
 
 			<div class="flex flex-col justify-center gap-4 sm:flex-row">
-				<Button
-					href="/login"
-					size="lg"
-					class="border-0 bg-linear-to-r from-purple-500 to-pink-500 px-8 py-6 text-lg text-white hover:from-purple-600 hover:to-pink-600"
-				>
-					Start Free Trial
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="ml-2 h-5 w-5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
+				{#if user}
+					<Button
+						href="/dashboard"
+						size="lg"
+						class="border-0 bg-linear-to-r from-purple-500 to-pink-500 px-8 py-6 text-lg text-white hover:from-purple-600 hover:to-pink-600"
 					>
-						<line x1="5" y1="12" x2="19" y2="12" />
-						<polyline points="12 5 19 12 12 19" />
-					</svg>
-				</Button>
+						Go to Dashboard
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="ml-2 h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<line x1="5" y1="12" x2="19" y2="12" />
+							<polyline points="12 5 19 12 12 19" />
+						</svg>
+					</Button>
+				{:else}
+					<Button
+						href="/login"
+						size="lg"
+						class="border-0 bg-linear-to-r from-purple-500 to-pink-500 px-8 py-6 text-lg text-white hover:from-purple-600 hover:to-pink-600"
+					>
+						Start Free Trial
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="ml-2 h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<line x1="5" y1="12" x2="19" y2="12" />
+							<polyline points="12 5 19 12 12 19" />
+						</svg>
+					</Button>
+				{/if}
 				<Button
 					href="#features"
 					variant="outline"
@@ -189,13 +223,23 @@
 				<p class="mx-auto mb-8 max-w-2xl text-xl text-white/80">
 					Join thousands of users who trust Image Studio for their image optimization needs.
 				</p>
-				<Button
-					href="/login"
-					size="lg"
-					class="bg-white px-8 py-6 text-lg font-semibold text-purple-600 hover:bg-gray-100"
-				>
-					Get Started for Free
-				</Button>
+				{#if user}
+					<Button
+						href="/dashboard"
+						size="lg"
+						class="bg-white px-8 py-6 text-lg font-semibold text-purple-600 hover:bg-gray-100"
+					>
+						Go to Dashboard
+					</Button>
+				{:else}
+					<Button
+						href="/login"
+						size="lg"
+						class="bg-white px-8 py-6 text-lg font-semibold text-purple-600 hover:bg-gray-100"
+					>
+						Get Started for Free
+					</Button>
+				{/if}
 			</div>
 		</div>
 	</section>
