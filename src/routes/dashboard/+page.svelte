@@ -1,10 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { ImageUploadForm, ProcessResult, HistoryList } from '$lib/components/dashboard';
-	import { IconLogout, IconStar } from '$lib/components/icons';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Button } from '$lib/components/ui/button';
-	import { enhance } from '$app/forms';
 
 	let { data, form }: PageProps = $props();
 
@@ -13,12 +9,8 @@
 
 <div class="space-y-8">
 	<header>
-		<h1
-			class="bg-linear-to-r from-white via-purple-200 to-violet-300 bg-clip-text text-3xl font-bold text-transparent md:text-4xl"
-		>
-			Image Studio
-		</h1>
-		<p class="mt-1 text-slate-400">Compress & Convert your images instantly</p>
+		<h1 class="text-3xl font-bold text-foreground md:text-4xl">Image Studio</h1>
+		<p class="mt-1 text-muted-foreground">Compress & Convert your images instantly</p>
 	</header>
 
 	<div class="grid gap-6 lg:grid-cols-2">

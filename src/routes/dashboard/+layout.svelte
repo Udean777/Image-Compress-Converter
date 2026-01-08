@@ -10,22 +10,16 @@
 
 	let { data, children }: LayoutProps = $props();
 
-	let isDarkMode = $state(true);
-
 	let sidebarCollapsed = $state(false);
 
 	let showLogoutDialog = $state(false);
-
-	function toggleDarkMode() {
-		isDarkMode = !isDarkMode;
-	}
 
 	function toggleSidebar() {
 		sidebarCollapsed = !sidebarCollapsed;
 	}
 </script>
 
-<div class="flex min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
+<div class="flex min-h-screen bg-muted/40">
 	<Sidebar
 		credits={data.user.credits}
 		collapsed={sidebarCollapsed}
@@ -35,7 +29,7 @@
 	<div
 		class="flex flex-1 flex-col transition-all duration-300 {sidebarCollapsed ? 'ml-20' : 'ml-64'}"
 	>
-		<Header user={data.user} {isDarkMode} onToggleDarkMode={toggleDarkMode}>
+		<Header user={data.user}>
 			{#snippet logoutForm()}
 				<button type="button" onclick={() => (showLogoutDialog = true)} class="w-full text-left">
 					<DropdownMenu.Item class="text-red-400 focus:bg-red-500/10 focus:text-red-400">

@@ -24,18 +24,18 @@
 </script>
 
 <section
-	class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl md:p-8"
+	class="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8"
 	aria-labelledby="upload-title"
 >
 	<div class="mb-6 flex items-center gap-3">
 		<div
-			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/30"
+			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-purple-500/30"
 		>
-			<IconImage class="h-6 w-6 text-white" />
+			<IconImage class="h-6 w-6 text-primary-foreground" />
 		</div>
 		<div>
-			<h2 id="upload-title" class="text-xl font-semibold text-white">Process Image</h2>
-			<p class="text-sm text-slate-400">Upload and transform your image</p>
+			<h2 id="upload-title" class="text-xl font-semibold text-foreground">Process Image</h2>
+			<p class="text-sm text-muted-foreground">Upload and transform your image</p>
 		</div>
 	</div>
 
@@ -65,8 +65,8 @@
 		<div
 			class="group relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-300
 				{dragOver
-				? 'border-violet-400 bg-violet-500/10'
-				: 'border-white/20 hover:border-violet-400/50 hover:bg-white/5'}"
+				? 'border-primary bg-primary/10'
+				: 'border-border hover:border-primary/50 hover:bg-muted/50'}"
 			role="button"
 			tabindex="0"
 			ondragover={(e) => {
@@ -92,41 +92,43 @@
 					<IconUpload class="h-8 w-8 text-violet-400" />
 				</div>
 				{#if fileName}
-					<p class="font-medium text-violet-300">{fileName}</p>
+					<p class="font-medium text-primary">{fileName}</p>
 				{:else}
-					<p class="text-slate-300">
-						Drag & drop or <span class="font-medium text-violet-400">browse</span>
+					<p class="text-muted-foreground">
+						Drag & drop or <span class="font-medium text-primary">browse</span>
 					</p>
-					<p class="text-sm text-slate-500">PNG, JPG, WEBP up to 5MB</p>
+					<p class="text-sm text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
 				{/if}
 			</div>
 		</div>
 
 		<div class="grid gap-4 sm:grid-cols-2">
 			<div class="space-y-2">
-				<label for="action" class="block text-sm font-medium text-slate-300">Action</label>
+				<label for="action" class="block text-sm font-medium text-muted-foreground">Action</label>
 				<select
 					name="action"
 					id="action"
 					disabled={loading}
-					class="w-full cursor-pointer appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white transition-all focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 focus:outline-none disabled:opacity-50"
+					class="w-full cursor-pointer appearance-none rounded-xl border border-input bg-background px-4 py-3 text-foreground transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50"
 				>
 					{#each IMAGE_ACTIONS as action}
-						<option value={action.value} class="bg-slate-800">{action.label}</option>
+						<option value={action.value} class="bg-popover text-foreground">{action.label}</option>
 					{/each}
 				</select>
 			</div>
 
 			<div class="space-y-2">
-				<label for="format" class="block text-sm font-medium text-slate-300">Target Format</label>
+				<label for="format" class="block text-sm font-medium text-muted-foreground"
+					>Target Format</label
+				>
 				<select
 					name="format"
 					id="format"
 					disabled={loading}
-					class="w-full cursor-pointer appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white transition-all focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/50 focus:outline-none disabled:opacity-50"
+					class="w-full cursor-pointer appearance-none rounded-xl border border-input bg-background px-4 py-3 text-foreground transition-all focus:border-primary/50 focus:ring-2 focus:ring-primary/50 focus:outline-none disabled:opacity-50"
 				>
 					{#each IMAGE_FORMATS as format}
-						<option value={format.value} class="bg-slate-800">{format.label}</option>
+						<option value={format.value} class="bg-popover text-foreground">{format.label}</option>
 					{/each}
 				</select>
 			</div>

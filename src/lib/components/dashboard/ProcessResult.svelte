@@ -18,33 +18,35 @@
 </script>
 
 <section
-	class="animate-in rounded-3xl border border-emerald-500/30 bg-linear-to-br from-emerald-500/10 to-teal-500/10 p-6 shadow-2xl backdrop-blur-xl duration-500 fade-in md:p-8"
+	class="animate-in rounded-3xl border border-emerald-500/30 bg-card p-6 shadow-sm duration-500 fade-in md:p-8"
 	aria-labelledby="success-title"
 >
 	<div class="mb-5 flex items-center gap-3">
 		<div
-			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/30"
+			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 shadow-lg shadow-emerald-500/30"
 		>
 			<IconCheck class="h-6 w-6 text-white" />
 		</div>
 		<div>
-			<h2 id="success-title" class="text-xl font-semibold text-white">Success!</h2>
-			<p class="text-sm text-emerald-300">{result?.stats}</p>
+			<h2 id="success-title" class="text-xl font-semibold text-foreground">Success!</h2>
+			<p class="text-sm text-emerald-500">{result?.stats}</p>
 		</div>
 	</div>
 
 	<div class="mb-5 grid grid-cols-2 gap-4">
-		<div class="rounded-xl border border-white/10 bg-white/5 p-3">
-			<p class="mb-1 text-xs tracking-wider text-slate-400 uppercase">Original</p>
-			<p class="font-medium text-white">{formatBytes(result?.originalSize ?? 0)}</p>
+		<div class="rounded-xl border border-border bg-muted/50 p-3">
+			<p class="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Original</p>
+			<p class="font-medium text-foreground">{formatBytes(result?.originalSize ?? 0)}</p>
 		</div>
 		<div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-			<p class="mb-1 text-xs tracking-wider text-emerald-300 uppercase">Optimized</p>
-			<p class="font-medium text-white">{formatBytes(result?.newSize ?? 0)}</p>
+			<p class="mb-1 text-xs tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+				Optimized
+			</p>
+			<p class="font-medium text-foreground">{formatBytes(result?.newSize ?? 0)}</p>
 		</div>
 	</div>
 
-	<div class="mb-5 rounded-2xl bg-black/20 p-4">
+	<div class="mb-5 rounded-2xl bg-muted/50 p-4">
 		<img
 			src={result?.url}
 			alt="Processed result"

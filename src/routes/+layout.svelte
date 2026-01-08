@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { ModeWatcher } from 'mode-watcher';
 
 	let { children } = $props();
 </script>
@@ -13,5 +14,7 @@
 		content="Compress and convert your images instantly with our SaaS tool"
 	/>
 </svelte:head>
+
+<ModeWatcher />
 
 {@render children()}

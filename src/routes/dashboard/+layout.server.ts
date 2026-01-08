@@ -5,7 +5,6 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async ({ locals }) => {
 	if (!locals.user) throw redirect(303, '/');
 
-	// Fetch fresh user data for layout (credits, etc)
 	const user = await prisma.user.findUnique({
 		where: { id: locals.user.id },
 		select: {

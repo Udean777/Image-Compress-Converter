@@ -14,7 +14,7 @@
 <DropdownMenuPrimitive.Item
 	class={cn(
 		'relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none',
-		'focus:bg-white/10 focus:text-white',
+		'focus:bg-primary/10 focus:text-primary',
 		'data-disabled:pointer-events-none data-disabled:opacity-50',
 		'[&>svg]:size-4 [&>svg]:shrink-0',
 		inset && 'pl-8',

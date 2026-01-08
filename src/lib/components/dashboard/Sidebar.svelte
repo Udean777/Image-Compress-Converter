@@ -24,25 +24,23 @@
 </script>
 
 <aside
-	class="fixed top-0 left-0 z-40 flex h-screen flex-col border-r border-white/10 bg-slate-900/95 backdrop-blur-xl transition-all duration-300 {collapsed
+	class="fixed top-0 left-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 {collapsed
 		? 'w-20'
 		: 'w-64'}"
 >
 	<!-- Logo -->
-	<div class="flex h-16 items-center justify-between border-b border-white/10 px-4">
+	<div class="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
 		<div class="flex items-center gap-3">
-			<div
-				class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-violet-500 to-purple-600 shadow-lg"
-			>
-				<span class="text-lg font-bold text-white">IS</span>
+			<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg">
+				<span class="text-lg font-bold text-primary-foreground">IS</span>
 			</div>
 			{#if !collapsed}
-				<h1 class="text-lg font-bold text-white">Image Studio</h1>
+				<h1 class="text-lg font-bold text-sidebar-foreground">Image Studio</h1>
 			{/if}
 		</div>
 		<button
 			onclick={onToggleCollapse}
-			class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+			class="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
 		>
 			<IconChevronLeft class="h-5 w-5 transition-transform {collapsed ? 'rotate-180' : ''}" />
 		</button>
@@ -55,8 +53,8 @@
 			<a
 				href={item.href}
 				class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all {isActive
-					? 'bg-violet-600/20 text-violet-400'
-					: 'text-slate-400 hover:bg-white/5 hover:text-white'}"
+					? 'bg-sidebar-accent text-sidebar-accent-foreground'
+					: 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}"
 			>
 				<item.icon class="h-5 w-5 shrink-0" />
 				{#if !collapsed}
@@ -67,15 +65,17 @@
 	</nav>
 
 	<!-- Credits display -->
-	<div class="border-t border-white/10 p-3">
+	<div class="border-t border-sidebar-border p-3">
 		<div
 			class="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 {collapsed
 				? 'justify-center'
 				: ''}"
 		>
-			<IconStar class="h-4 w-4 shrink-0 text-amber-400" />
+			<IconStar class="h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" />
 			{#if !collapsed}
-				<span class="text-sm font-semibold text-amber-400">{credits} Credits</span>
+				<span class="text-sm font-semibold text-amber-600 dark:text-amber-400"
+					>{credits} Credits</span
+				>
 			{/if}
 		</div>
 	</div>
