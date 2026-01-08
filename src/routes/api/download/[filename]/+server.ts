@@ -6,10 +6,9 @@ import type { RequestHandler } from './$types';
 
 const STORAGE_PATH = process.env.STORAGE_PATH || './storage/processed';
 
-export const GET: RequestHandler = async ({ params, cookies }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
 	// Verify authentication
-	const sessionId = cookies.get('session');
-	if (!sessionId) {
+	if (!locals.user) {
 		throw error(401, 'Unauthorized');
 	}
 

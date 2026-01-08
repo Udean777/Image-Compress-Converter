@@ -1,10 +1,20 @@
 <script lang="ts">
 	import type { ActionData, PageProps } from './$types';
 	import { enhance } from '$app/forms';
-	import { IconUser, IconLock, IconTrash, IconLoader, IconUpload } from '$lib/components/icons';
+	import {
+		IconUser,
+		IconLock,
+		IconTrash,
+		IconLoader,
+		IconUpload,
+		IconEye,
+		IconEyeOff,
+		IconError
+	} from '$lib/components/icons';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Slider } from '$lib/components/ui/slider';
 	import getCroppedImg from '$lib/utils/image';
+	import { toast } from 'svelte-sonner';
 
 	let { data, form }: PageProps = $props();
 	let activeTab = $state('profile');
@@ -12,6 +22,7 @@
 
 	// Prefer form data (most recent update) over load data
 	let user = $derived(form?.user ?? data.user);
+	let currentPassword = $state('');
 
 	// Avatar Editor State
 	let showEditor = $state(false);
@@ -23,8 +34,45 @@
 	);
 	let fileInput = $state<HTMLInputElement>();
 
-	let successMessage = $derived(form?.success ? form.message : '');
-	let errorMessage = $derived(form?.success === false ? form.message : '');
+	// Change Password UX State
+	let showCurrentPassword = $state(false);
+	let showNewPassword = $state(false);
+	let showConfirmPassword = $state(false);
+	let newPassword = $state('');
+	let confirmPassword = $state('');
+	let passwordMatch = $derived(newPassword === confirmPassword);
+	let passwordStrength = $derived(calculateStrength(newPassword));
+
+	// Delete Account UX State
+	let showDeleteDialog = $state(false);
+	let deleteStep = $state(1); // 1: Password, 2: Final Warning
+	let deletePassword = $state('');
+	let showDeletePassword = $state(false);
+
+	function calculateStrength(pwd: string) {
+		if (!pwd) return 0;
+		let strength = 0;
+		if (pwd.length >= 8) strength += 25;
+		if (/[A-Z]/.test(pwd)) strength += 25;
+		if (/[0-9]/.test(pwd)) strength += 25;
+		if (/[^A-Za-z0-9]/.test(pwd)) strength += 25;
+		return strength;
+	}
+
+	function getStrengthColor(strength: number) {
+		if (strength <= 25) return 'bg-red-500';
+		if (strength <= 50) return 'bg-orange-500';
+		if (strength <= 75) return 'bg-yellow-500';
+		return 'bg-emerald-500';
+	}
+
+	function getStrengthText(strength: number) {
+		if (strength === 0) return '';
+		if (strength <= 25) return 'Weak';
+		if (strength <= 50) return 'Fair';
+		if (strength <= 75) return 'Good';
+		return 'Strong';
+	}
 
 	// Add cache buster to avatar URL
 	let avatarUrl = $derived(user.avatarUrl ? `${user.avatarUrl}?t=${Date.now()}` : null);
@@ -151,12 +199,13 @@
 			const result = await response.json();
 
 			if (result.type === 'success') {
+				toast.success('Avatar updated successfully');
 				// Refresh page data to show new avatar immediately
 				window.location.reload();
 			} else {
 				// Handle error
 				console.error('Upload failed', result);
-				alert('Upload failed: ' + (result?.data?.message || 'Unknown error'));
+				toast.error(result?.data?.message || 'Upload failed');
 			}
 		} catch (e) {
 			console.error('Exception in onSaveCrop:', e);
@@ -199,22 +248,6 @@
 		</div>
 
 		<div class="p-6">
-			{#if successMessage}
-				<div
-					class="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-400"
-				>
-					{successMessage}
-				</div>
-			{/if}
-
-			{#if errorMessage}
-				<div
-					class="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400"
-				>
-					{errorMessage}
-				</div>
-			{/if}
-
 			{#if activeTab === 'profile'}
 				<div class="max-w-xl space-y-8">
 					<!-- Avatar Upload -->
@@ -261,9 +294,15 @@
 						action="?/updateProfile"
 						use:enhance={() => {
 							loading = true;
-							return async ({ update }) => {
+							return async ({ update, result }) => {
 								await update();
 								loading = false;
+								if (result.type === 'success') {
+									toast.success('Profile updated successfully');
+								} else if (result.type === 'failure') {
+									const msg = result.data?.message;
+									toast.error(typeof msg === 'string' ? msg : 'Failed to update profile');
+								}
 							};
 						}}
 						class="space-y-6"
@@ -314,9 +353,21 @@
 						action="?/updatePassword"
 						use:enhance={() => {
 							loading = true;
-							return async ({ update }) => {
+							return async ({ update, result }) => {
 								await update();
 								loading = false;
+								if (result.type === 'success') {
+									toast.success('Password updated successfully');
+									currentPassword = '';
+									newPassword = '';
+									confirmPassword = '';
+									showCurrentPassword = false;
+									showNewPassword = false;
+									showConfirmPassword = false;
+								} else if (result.type === 'failure') {
+									const msg = result.data?.message;
+									toast.error(typeof msg === 'string' ? msg : 'Failed to update password');
+								}
 							};
 						}}
 						class="space-y-6"
@@ -327,13 +378,27 @@
 							<label for="currentPassword" class="text-sm font-medium text-slate-300"
 								>Current Password</label
 							>
-							<input
-								type="password"
-								id="currentPassword"
-								name="currentPassword"
-								required
-								class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 focus:outline-hidden"
-							/>
+							<div class="relative">
+								<input
+									type={showCurrentPassword ? 'text' : 'password'}
+									id="currentPassword"
+									name="currentPassword"
+									required
+									bind:value={currentPassword}
+									class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white placeholder-slate-500 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 focus:outline-hidden"
+								/>
+								<button
+									type="button"
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+									onclick={() => (showCurrentPassword = !showCurrentPassword)}
+								>
+									{#if showCurrentPassword}
+										<IconEyeOff class="h-5 w-5" />
+									{:else}
+										<IconEye class="h-5 w-5" />
+									{/if}
+								</button>
+							</div>
 						</div>
 
 						<div class="grid gap-6 md:grid-cols-2">
@@ -341,34 +406,88 @@
 								<label for="newPassword" class="text-sm font-medium text-slate-300"
 									>New Password</label
 								>
-								<input
-									type="password"
-									id="newPassword"
-									name="newPassword"
-									required
-									minlength="6"
-									class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 focus:outline-hidden"
-								/>
+								<div class="relative">
+									<input
+										type={showNewPassword ? 'text' : 'password'}
+										id="newPassword"
+										name="newPassword"
+										required
+										minlength="6"
+										bind:value={newPassword}
+										class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white placeholder-slate-500 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 focus:outline-hidden"
+									/>
+									<button
+										type="button"
+										class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+										onclick={() => (showNewPassword = !showNewPassword)}
+									>
+										{#if showNewPassword}
+											<IconEyeOff class="h-5 w-5" />
+										{:else}
+											<IconEye class="h-5 w-5" />
+										{/if}
+									</button>
+								</div>
+								<!-- Strength Indicator -->
+								{#if newPassword}
+									<div class="mt-2 space-y-1">
+										<div
+											class="flex items-center justify-between text-[10px] font-bold tracking-wider text-slate-500 uppercase"
+										>
+											<span>Strength</span>
+											<span>{getStrengthText(passwordStrength)}</span>
+										</div>
+										<div class="h-1 w-full overflow-hidden rounded-full bg-white/10">
+											<div
+												class="h-full transition-all duration-500 {getStrengthColor(
+													passwordStrength
+												)}"
+												style="width: {passwordStrength}%"
+											></div>
+										</div>
+									</div>
+								{/if}
 							</div>
 
 							<div class="space-y-2">
 								<label for="confirmPassword" class="text-sm font-medium text-slate-300"
 									>Confirm Password</label
 								>
-								<input
-									type="password"
-									id="confirmPassword"
-									name="confirmPassword"
-									required
-									minlength="6"
-									class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 focus:outline-hidden"
-								/>
+								<div class="relative">
+									<input
+										type={showConfirmPassword ? 'text' : 'password'}
+										id="confirmPassword"
+										name="confirmPassword"
+										required
+										minlength="6"
+										bind:value={confirmPassword}
+										class="w-full rounded-xl border {confirmPassword && !passwordMatch
+											? 'border-red-500/50'
+											: 'border-white/10'} bg-white/5 px-4 py-3 pr-12 text-white placeholder-slate-500 focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/10 focus:outline-hidden"
+									/>
+									<button
+										type="button"
+										class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+										onclick={() => (showConfirmPassword = !showConfirmPassword)}
+									>
+										{#if showConfirmPassword}
+											<IconEyeOff class="h-5 w-5" />
+										{:else}
+											<IconEye class="h-5 w-5" />
+										{/if}
+									</button>
+								</div>
+								{#if confirmPassword && !passwordMatch}
+									<p class="text-xs text-red-400">Passwords do not match</p>
+								{:else if confirmPassword && passwordMatch}
+									<p class="text-xs text-emerald-400">Passwords match</p>
+								{/if}
 							</div>
 						</div>
 
 						<button
 							type="submit"
-							disabled={loading}
+							disabled={loading || (newPassword !== '' && !passwordMatch)}
 							class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-6 py-3 font-semibold text-white transition-all hover:bg-white/20 disabled:opacity-50"
 						>
 							{#if loading}
@@ -385,36 +504,33 @@
 
 					<!-- Delete Account -->
 					<div class="space-y-4 rounded-xl border border-red-500/20 bg-red-500/5 p-6">
-						<h3 class="text-lg font-medium text-red-400">Danger Zone</h3>
-						<p class="text-sm text-slate-400">
-							Permanently delete your account and all of your content. This action cannot be undone.
+						<div class="flex items-center gap-3">
+							<div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
+								<IconTrash class="h-5 w-5 text-red-400" />
+							</div>
+							<div>
+								<h3 class="text-lg font-medium text-red-400">Danger Zone</h3>
+								<p class="text-sm text-slate-400">
+									Permanently delete your account and all of your content.
+								</p>
+							</div>
+						</div>
+						<p class="text-sm text-slate-500">
+							This action is irreversible. All your data, including history and settings, will be
+							permanently removed.
 						</p>
-						<form
-							method="POST"
-							action="?/deleteAccount"
-							use:enhance={() => {
-								return async ({ result }) => {
-									if (result.type === 'redirect') {
-										window.location.href = result.location;
-									}
-								};
+						<button
+							type="button"
+							onclick={() => {
+								showDeleteDialog = true;
+								deleteStep = 1;
+								deletePassword = '';
 							}}
-							onsubmit={(e) => {
-								if (
-									!confirm('Are you sure you want to delete your account? This cannot be undone.')
-								) {
-									e.preventDefault();
-								}
-							}}
+							class="inline-flex items-center gap-2 rounded-xl bg-red-500/10 px-6 py-3 font-semibold text-red-400 transition-all hover:bg-red-500/20"
 						>
-							<button
-								type="submit"
-								class="inline-flex items-center gap-2 rounded-xl bg-red-500/10 px-6 py-3 font-semibold text-red-400 transition-all hover:bg-red-500/20"
-							>
-								<IconTrash class="h-4 w-4" />
-								Delete Account
-							</button>
-						</form>
+							<IconTrash class="h-4 w-4" />
+							Delete Account
+						</button>
 					</div>
 				</div>
 			{/if}
@@ -500,6 +616,120 @@
 						Save Changes
 					{/if}
 				</button>
+			</Dialog.Footer>
+		</Dialog.Content>
+	</Dialog.Root>
+
+	<!-- Delete Account Dialog -->
+	<Dialog.Root bind:open={showDeleteDialog}>
+		<Dialog.Content class="border-white/10 bg-slate-900 text-white sm:max-w-md">
+			<Dialog.Header>
+				<Dialog.Title class="text-xl font-semibold text-red-400">Delete Account</Dialog.Title>
+				<Dialog.Description class="text-slate-400">
+					{#if deleteStep === 1}
+						Please verify your identity to proceed with account deletion.
+					{:else}
+						Final confirmation. This action cannot be undone.
+					{/if}
+				</Dialog.Description>
+			</Dialog.Header>
+
+			<div class="py-4">
+				{#if deleteStep === 1}
+					<div class="space-y-4">
+						<div class="space-y-2">
+							<label for="deletePassword" class="text-sm font-medium text-slate-300">
+								Confirm your password
+							</label>
+							<div class="relative">
+								<input
+									type={showDeletePassword ? 'text' : 'password'}
+									id="deletePassword"
+									name="password"
+									bind:value={deletePassword}
+									placeholder="Enter your password"
+									class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-white placeholder-slate-500 focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10 focus:outline-hidden"
+								/>
+								<button
+									type="button"
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+									onclick={() => (showDeletePassword = !showDeletePassword)}
+								>
+									{#if showDeletePassword}
+										<IconEyeOff class="h-5 w-5" />
+									{:else}
+										<IconEye class="h-5 w-5" />
+									{/if}
+								</button>
+							</div>
+						</div>
+					</div>
+				{:else}
+					<div class="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+						<div class="flex gap-3">
+							<IconError class="h-5 w-5 shrink-0 text-red-400" />
+							<div class="space-y-2">
+								<p class="text-sm font-medium text-red-400">Are you absolutely sure?</p>
+								<p class="text-xs leading-relaxed text-slate-400">
+									Deleting your account will remove all your data from our servers. This includes
+									your profile, credits, and all historical records. You will not be able to recover
+									them.
+								</p>
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<Dialog.Footer class="gap-2 sm:gap-0">
+				<button
+					type="button"
+					onclick={() => (showDeleteDialog = false)}
+					class="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-white"
+				>
+					Cancel
+				</button>
+				{#if deleteStep === 1}
+					<button
+						onclick={() => (deleteStep = 2)}
+						disabled={!deletePassword}
+						class="rounded-lg bg-white/10 px-6 py-2 text-sm font-semibold text-white transition-all hover:bg-white/20 disabled:opacity-50"
+					>
+						Next Step
+					</button>
+				{:else}
+					<form
+						method="POST"
+						action="?/deleteAccount"
+						use:enhance={() => {
+							loading = true;
+							return async ({ result }) => {
+								loading = false;
+								if (result.type === 'redirect') {
+									window.location.href = result.location;
+								} else if (result.type === 'failure') {
+									const message = result.data?.message;
+									toast.error(typeof message === 'string' ? message : 'Failed to delete account');
+									deleteStep = 1; // Go back to password step
+								}
+							};
+						}}
+					>
+						<input type="hidden" name="password" value={deletePassword} />
+						<button
+							type="submit"
+							disabled={loading}
+							class="w-full rounded-lg bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-500 disabled:opacity-50"
+						>
+							{#if loading}
+								<IconLoader class="mr-2 h-4 w-4 animate-spin" />
+								Deleting...
+							{:else}
+								Permanently Delete My Account
+							{/if}
+						</button>
+					</form>
+				{/if}
 			</Dialog.Footer>
 		</Dialog.Content>
 	</Dialog.Root>

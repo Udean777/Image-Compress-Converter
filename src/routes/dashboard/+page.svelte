@@ -9,7 +9,6 @@
 	let { data, form }: PageProps = $props();
 
 	let showSuccessResult = $derived(form?.success && form?.result);
-	let errorMessage = $derived(form?.message && !form?.success ? form.message : undefined);
 </script>
 
 <div class="space-y-8">
@@ -23,7 +22,7 @@
 	</header>
 
 	<div class="grid gap-6 lg:grid-cols-2">
-		<ImageUploadForm {errorMessage} />
+		<ImageUploadForm />
 		<div class="space-y-6">
 			{#if showSuccessResult && form?.result}
 				<ProcessResult result={form.result} />

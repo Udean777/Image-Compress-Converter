@@ -2,14 +2,14 @@
 	import { enhance } from '$app/forms';
 	import { IconImage, IconUpload, IconBolt, IconError } from '$lib/components/icons';
 	import { IMAGE_ACTIONS, IMAGE_FORMATS } from '$lib/constants';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
-		errorMessage?: string;
 		onSubmitStart?: () => void;
 		onSubmitEnd?: () => void;
 	}
 
-	let { errorMessage, onSubmitStart, onSubmitEnd }: Props = $props();
+	let { onSubmitStart, onSubmitEnd }: Props = $props();
 
 	let loading = $state(false);
 	let dragOver = $state(false);
@@ -47,11 +47,18 @@
 		use:enhance={() => {
 			loading = true;
 			onSubmitStart?.();
-			return async ({ update }) => {
+			return async ({ update, result }) => {
 				await update();
 				loading = false;
 				fileName = '';
 				onSubmitEnd?.();
+
+				if (result.type === 'success') {
+					toast.success('Image processed successfully');
+				} else if (result.type === 'failure') {
+					const msg = result.data?.message;
+					toast.error(typeof msg === 'string' ? msg : 'Failed to process image');
+				}
 			};
 		}}
 	>
@@ -155,14 +162,4 @@
 			{/if}
 		</button>
 	</form>
-
-	{#if errorMessage}
-		<div
-			class="mt-4 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4"
-			role="alert"
-		>
-			<IconError class="h-5 w-5 text-red-400" />
-			<p class="text-sm text-red-300">{errorMessage}</p>
-		</div>
-	{/if}
 </section>

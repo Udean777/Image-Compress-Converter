@@ -8,16 +8,11 @@ import { ProcessType, type ImageFormat } from '$lib/types/image.types';
 const imageService = new ImageService();
 const userService = new UserService();
 
-export const load: PageServerLoad = async ({ cookies, parent }) => {
-	// Get user from parent layout
+export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { user } = await parent();
+	if (!locals.user) throw redirect(303, '/login');
 
-	const session = await prisma.session.findUnique({
-		where: { id: cookies.get('session')! },
-		include: { user: true }
-	});
-
-	const historyRaw = await userService.getUserHistory(session!.user.id);
+	const historyRaw = await userService.getUserHistory(locals.user.id);
 
 	const history = await Promise.all(
 		historyRaw.map(async (item) => {
@@ -37,18 +32,10 @@ export const load: PageServerLoad = async ({ cookies, parent }) => {
 };
 
 export const actions: Actions = {
-	process: async ({ cookies, request }) => {
-		const sessionId = cookies.get('session');
-		if (!sessionId) return fail(401, { message: 'Unauthorized' });
+	process: async ({ locals, request }) => {
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 
-		const session = await prisma.session.findUnique({
-			where: { id: sessionId },
-			include: { user: true }
-		});
-		if (!session) return fail(401, { message: 'Unauthorized' });
-
-		const user = session.user;
-
+		const user = locals.user;
 		const formData = await request.formData();
 		const file = formData.get('image') as File;
 		const type = formData.get('action') as ProcessType;
@@ -100,15 +87,8 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async ({ cookies, request }) => {
-		const sessionId = cookies.get('session');
-		if (!sessionId) return fail(401, { message: 'Unauthorized' });
-
-		const session = await prisma.session.findUnique({
-			where: { id: sessionId },
-			include: { user: true }
-		});
-		if (!session) return fail(401, { message: 'Unauthorized' });
+	delete: async ({ locals, request }) => {
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 
 		const formData = await request.formData();
 		const historyId = formData.get('historyId') as string;
@@ -117,7 +97,7 @@ export const actions: Actions = {
 			return fail(400, { message: 'Invalid history ID' });
 		}
 
-		await userService.deleteHistory(historyId, session.user.id);
+		await userService.deleteHistory(historyId, locals.user.id);
 
 		return { deleteSuccess: true };
 	},

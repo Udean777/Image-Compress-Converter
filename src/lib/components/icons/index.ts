@@ -21,5 +21,7 @@ export {
 	History as IconHistory,
 	LayoutDashboard as IconDashboard,
 	Menu as IconMenu,
-	ChevronLeft as IconChevronLeft
+	ChevronLeft as IconChevronLeft,
+	Eye as IconEye,
+	EyeOff as IconEyeOff
 } from '@lucide/svelte';

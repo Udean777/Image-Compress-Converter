@@ -1,32 +1,36 @@
 # 🖼️ Image Studio - Mini SaaS
 
-A modern image compression and conversion SaaS application built with SvelteKit, Prisma, and Bun.
+A modern, premium image compression and conversion SaaS application built with SvelteKit, Prisma, and Bun runtime. Featuring a high-end dashboard with advanced image processing capabilities.
 
 ## ✨ Features
 
-- **Image Compression**: Reduce file sizes up to 90% without quality loss
-- **Format Conversion**: Convert between PNG, JPG, and WebP formats
-- **Credit System**: Pay-per-use model with credit tracking
-- **Processing History**: Track all your processed images
-- **Secure Storage**: S3-compatible storage with presigned URLs
+- **🚀 Professional Dashboard**: Modern sidebar navigation with collapsible interface and responsive design.
+- **📉 Intelligent Compression**: Reduce image file sizes up to 90% while maintaining visual quality.
+- **🔄 Multi-format Conversion**: Lightning-fast conversion between PNG, JPG, and WebP formats.
+- **👤 Profile Management**: Custom avatar uploads with an interactive cropping editor.
+- **💳 Credit System**: Atomic credit tracking system with 10 free credits for new users.
+- **⏳ Processing History**: Complete history logs for all image operations with instant download links.
+- **☁️ S3 Storage**: Secure, high-performance file storage using S3-compatible APIs (MinIO/AWS).
+- **🌓 Dark Mode**: Sleek dark-mode interface by default for a premium creative experience.
 
 ## 🛠️ Tech Stack
 
-| Layer                | Technology                            |
-| -------------------- | ------------------------------------- |
-| **Frontend**         | SvelteKit 2, Svelte 5, Tailwind CSS 4 |
-| **Backend**          | SvelteKit Server, Bun Runtime         |
-| **Database**         | PostgreSQL + Prisma ORM               |
-| **Storage**          | S3 / MinIO                            |
-| **Image Processing** | Sharp                                 |
+| Layer                | Technology                                    |
+| -------------------- | --------------------------------------------- |
+| **Frontend**         | SvelteKit 2, Svelte 5 (Runes), Tailwind CSS 4 |
+| **UI Components**    | Shadcn-Svelte + Bits UI (Headless)            |
+| **Backend**          | SvelteKit Server, Bun Runtime                 |
+| **Database**         | PostgreSQL + Prisma ORM                       |
+| **Storage**          | S3 / MinIO                                    |
+| **Image Processing** | Sharp                                         |
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) v1.0+
+- [Bun](https://bun.sh) v1.1+
 - [Docker](https://docker.com) & Docker Compose
-- PostgreSQL (or use Docker)
+- PostgreSQL (Local or Docker)
 
 ### Development Setup
 
@@ -40,7 +44,7 @@ A modern image compression and conversion SaaS application built with SvelteKit,
 2. **Start infrastructure services**
 
    ```bash
-   docker compose up -d postgres minio createbuckets
+   docker compose up -d postgres minio
    ```
 
 3. **Install dependencies**
@@ -53,7 +57,7 @@ A modern image compression and conversion SaaS application built with SvelteKit,
 
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your specific database and S3 credentials
    ```
 
 5. **Setup database**
@@ -65,88 +69,73 @@ A modern image compression and conversion SaaS application built with SvelteKit,
 6. **Start development server**
 
    ```bash
-   bun run dev
+   bun --bun run dev --port 1234
    ```
 
-   Open [http://localhost:5173](http://localhost:5173)
+   Open [http://localhost:1234](http://localhost:1234)
 
 ## 🐳 Docker Deployment
 
 ### Full Stack with Docker Compose
 
 ```bash
-# Build and start all services
+# Build and start all services in detached mode
 docker compose up -d --build
 
-# View logs
+# View logs for the application
 docker compose logs -f app
 
-# Stop all services
+# Stop and remove containers
 docker compose down
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000)
-
-### Services
-
-| Service    | Port | Description               |
-| ---------- | ---- | ------------------------- |
-| `app`      | 3000 | SvelteKit application     |
-| `postgres` | 5432 | PostgreSQL database       |
-| `minio`    | 9000 | S3-compatible storage API |
-| `minio`    | 9001 | MinIO Console             |
-
-## ⚙️ Environment Variables
-
-| Variable        | Description                  | Default                 |
-| --------------- | ---------------------------- | ----------------------- |
-| `DATABASE_URL`  | PostgreSQL connection string | -                       |
-| `S3_ENDPOINT`   | S3/MinIO endpoint            | `http://localhost:9000` |
-| `S3_REGION`     | S3 region                    | `us-east-1`             |
-| `S3_ACCESS_KEY` | S3 access key                | -                       |
-| `S3_SECRET_KEY` | S3 secret key                | -                       |
-| `S3_BUCKET`     | S3 bucket name               | `saas-bucket`           |
 
 ## 📁 Project Structure
 
 ```
 src/
 ├── lib/
-│   ├── components/       # UI components
-│   │   ├── dashboard/    # Dashboard-specific components
-│   │   └── ui/           # Reusable UI components
-│   ├── server/
-│   │   └── services/     # Business logic
-│   │       ├── AuthService.ts
-│   │       ├── ImageService.ts
-│   │       └── UserService.ts
-│   └── types/            # TypeScript definitions
+│   ├── components/       # UI Components
+│   │   ├── dashboard/    # Sidebar, Header, and logic components
+│   │   ├── ui/           # Reusable base UI (Shadcn-Svelte)
+│   │   └── icons/        # Centralized Lucide icon exports
+│   ├── server/           # Backend Logic
+│   │   ├── services/     # Business services (Image, User, Auth)
+│   │   ├── s3.ts         # S3 Client configuration
+│   │   └── auth.ts       # Authentication helpers
+│   └── types/            # TypeScript schemas and definitions
 ├── routes/
-│   ├── (auth)/           # Auth pages (login, register)
-│   ├── dashboard/        # Protected dashboard
-│   └── api/              # API endpoints
-└── hooks.server.ts       # Auth middleware
+│   ├── (auth)/           # Auth views (Login, Register)
+│   ├── dashboard/        # Protected User Dashboard
+│   │   ├── history/      # Image processing history
+│   │   └── settings/     # Profile and security settings
+│   └── api/              # JSON API endpoints
+└── hooks.server.ts       # Server-side auth middleware
 ```
 
-## 🔐 API Endpoints
+## 🔐 API & Form Actions
 
 ### Authentication
 
 - `POST /login` - User login
 - `POST /register` - User registration
-- `POST /dashboard?/logout` - User logout
+- `POST ?/logout` - Secure logout with confirmation (available on all dashboard pages)
 
-### Image Processing (Form Actions)
+### Dashboard Actions
 
-- `POST /dashboard?/process` - Compress or convert image
-- `POST /dashboard?/delete` - Delete history item
+- `POST /dashboard?/process` - Upload and process images (Compress/Convert)
+- `POST /dashboard?/delete` - Remove item from history
+- `POST /dashboard/settings?/updateProfile` - Change name
+- `POST /dashboard/settings?/updateAvatar` - Upload new cropped avatar
 
 ## 💳 Credit System
 
-- New users receive **10 free credits**
-- Each image operation costs **1 credit**
-- Credits are deducted atomically with history recording
+- Each account starts with **10 credits**.
+- Every successful image processing task costs **1 credit**.
+- Failed operations do not deduct credits.
+- Credits are tracked atomically to ensure balance integrity.
 
 ## 📄 License
 
-MIT
+MIT © 2026 Image Studio

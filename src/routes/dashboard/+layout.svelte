@@ -6,16 +6,14 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
+	import { Toaster } from 'svelte-sonner';
 
 	let { data, children }: LayoutProps = $props();
 
-	// Dark mode state
 	let isDarkMode = $state(true);
 
-	// Sidebar collapsed state
 	let sidebarCollapsed = $state(false);
 
-	// Logout confirmation dialog
 	let showLogoutDialog = $state(false);
 
 	function toggleDarkMode() {
@@ -28,18 +26,15 @@
 </script>
 
 <div class="flex min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
-	<!-- Sidebar Component -->
 	<Sidebar
 		credits={data.user.credits}
 		collapsed={sidebarCollapsed}
 		onToggleCollapse={toggleSidebar}
 	/>
 
-	<!-- Main content area -->
 	<div
 		class="flex flex-1 flex-col transition-all duration-300 {sidebarCollapsed ? 'ml-20' : 'ml-64'}"
 	>
-		<!-- Header Component -->
 		<Header user={data.user} {isDarkMode} onToggleDarkMode={toggleDarkMode}>
 			{#snippet logoutForm()}
 				<button type="button" onclick={() => (showLogoutDialog = true)} class="w-full text-left">
@@ -51,7 +46,6 @@
 			{/snippet}
 		</Header>
 
-		<!-- Main Content -->
 		<main class="flex-1 p-6 md:p-10">
 			<div class="mx-auto max-w-6xl">
 				{@render children()}
@@ -60,7 +54,6 @@
 	</div>
 </div>
 
-<!-- Logout Confirmation Dialog -->
 <Dialog.Root bind:open={showLogoutDialog}>
 	<Dialog.Content class="border-white/10 bg-slate-900 sm:max-w-md">
 		<Dialog.Header>
@@ -86,3 +79,5 @@
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
+
+<Toaster position="top-right" richColors theme="dark" />

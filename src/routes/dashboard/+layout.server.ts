@@ -2,23 +2,23 @@ import { prisma } from '$lib/server/db';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ cookies }) => {
-	const sessionId = cookies.get('session');
-	if (!sessionId) throw redirect(303, '/login');
+export const load: LayoutServerLoad = async ({ locals }) => {
+	if (!locals.user) throw redirect(303, '/login');
 
-	const session = await prisma.session.findUnique({
-		where: { id: sessionId },
-		include: { user: true }
+	// Fetch fresh user data for layout (credits, etc)
+	const user = await prisma.user.findUnique({
+		where: { id: locals.user.id },
+		select: {
+			email: true,
+			credits: true,
+			name: true,
+			avatarUrl: true
+		}
 	});
 
-	if (!session) throw redirect(303, '/login');
+	if (!user) throw redirect(303, '/login');
 
 	return {
-		user: {
-			email: session.user.email,
-			credits: session.user.credits,
-			name: session.user.name,
-			avatarUrl: session.user.avatarUrl
-		}
+		user
 	};
 };

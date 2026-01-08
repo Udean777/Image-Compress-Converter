@@ -7,18 +7,10 @@ import type { Actions, PageServerLoad } from './$types';
 const userService = new UserService();
 const imageService = new ImageService();
 
-export const load: PageServerLoad = async ({ cookies }) => {
-	const sessionId = cookies.get('session');
-	if (!sessionId) throw redirect(303, '/login');
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.user) throw redirect(303, '/login');
 
-	const session = await prisma.session.findUnique({
-		where: { id: sessionId },
-		include: { user: true }
-	});
-
-	if (!session) throw redirect(303, '/login');
-
-	const historyRaw = await userService.getUserHistory(session.user.id);
+	const historyRaw = await userService.getUserHistory(locals.user.id);
 
 	const history = await Promise.all(
 		historyRaw.map(async (item) => {

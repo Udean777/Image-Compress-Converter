@@ -3,14 +3,15 @@ import { prisma } from '$lib/server/db';
 import type { Cookies } from '@sveltejs/kit';
 
 export async function performLogout(cookies: Cookies) {
-	const sessionId = cookies.get('session');
-	if (sessionId) {
+	const refreshToken = cookies.get('refresh_token');
+	if (refreshToken) {
 		await prisma.session
 			.delete({
-				where: { id: sessionId }
+				where: { id: refreshToken }
 			})
 			.catch(() => {});
 	}
-	cookies.delete('session', { path: '/' });
+	cookies.delete('access_token', { path: '/' });
+	cookies.delete('refresh_token', { path: '/' });
 	throw redirect(303, '/login');
 }

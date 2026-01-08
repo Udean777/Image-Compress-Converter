@@ -9,8 +9,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(302, '/login');
 	}
 
+	const user = await db.user.findUnique({
+		where: { id: locals.user.id },
+		select: {
+			id: true,
+			email: true,
+			name: true,
+			credits: true,
+			avatarUrl: true
+		}
+	});
+
+	if (!user) {
+		throw redirect(302, '/login');
+	}
+
 	return {
-		user: locals.user
+		user
 	};
 };
 
@@ -30,7 +45,14 @@ export const actions: Actions = {
 		try {
 			const updatedUser = await db.user.update({
 				where: { id: locals.user.id },
-				data: { name }
+				data: { name },
+				select: {
+					id: true,
+					email: true,
+					name: true,
+					credits: true,
+					avatarUrl: true
+				}
 			});
 
 			return {
@@ -113,13 +135,28 @@ export const actions: Actions = {
 				return fail(404, { message: 'User not found' });
 			}
 
-			const isValid = await bcrypt.compare(currentPassword, user.password);
+			// 1. Try Bun.password.verify (Standard for Argon2/Bun bcrypt)
+			let isValid = await Bun.password.verify(currentPassword, user.password);
+			let needsMigration = false;
+
+			// 2. Fallback to bcryptjs (Support legacy hashes if Bun.password fails)
+			if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+				isValid = await bcrypt.compare(currentPassword, user.password);
+				if (isValid) {
+					needsMigration = true;
+				}
+			}
 
 			if (!isValid) {
 				return fail(400, { message: 'Incorrect current password' });
 			}
 
-			const hashedPassword = await bcrypt.hash(newPassword, 10);
+			// If we matched a legacy hash, migrate it before setting the new one
+			// Or just set the new one below anyway.
+			// But if the user somehow failed the new password update below,
+			// we at least migrated them.
+
+			const hashedPassword = await Bun.password.hash(newPassword);
 
 			await db.user.update({
 				where: { id: locals.user.id },
@@ -133,12 +170,39 @@ export const actions: Actions = {
 		}
 	},
 
-	deleteAccount: async ({ locals }) => {
+	deleteAccount: async ({ request, locals }) => {
 		if (!locals.user) {
 			return fail(401, { message: 'Unauthorized' });
 		}
 
+		const data = await request.formData();
+		const password = data.get('password') as string;
+
+		if (!password) {
+			return fail(400, { message: 'Password is required' });
+		}
+
 		try {
+			const user = await db.user.findUnique({
+				where: { id: locals.user.id }
+			});
+
+			if (!user) {
+				return fail(404, { message: 'User not found' });
+			}
+
+			// Verify password
+			let isValid = await Bun.password.verify(password, user.password);
+
+			// Fallback to bcryptjs for legacy hashes
+			if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+				isValid = await bcrypt.compare(password, user.password);
+			}
+
+			if (!isValid) {
+				return fail(400, { message: 'Incorrect password' });
+			}
+
 			await db.user.delete({
 				where: { id: locals.user.id }
 			});

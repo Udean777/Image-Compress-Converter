@@ -13,13 +13,21 @@ export const actions: Actions = {
 		try {
 			const result = await authService.login({ email, password });
 
-			if (result.sessionId) {
-				cookies.set('session', result.sessionId, {
+			if (result.accessToken && result.refreshToken) {
+				cookies.set('access_token', result.accessToken, {
 					path: '/',
 					httpOnly: true,
 					sameSite: 'strict',
 					secure: process.env.NODE_ENV === 'production',
-					maxAge: 60 * 60 * 24 * 7
+					maxAge: 60 * 15 // 15 minutes
+				});
+
+				cookies.set('refresh_token', result.refreshToken, {
+					path: '/',
+					httpOnly: true,
+					sameSite: 'strict',
+					secure: process.env.NODE_ENV === 'production',
+					maxAge: 60 * 60 * 24 * 7 // 7 days
 				});
 			}
 		} catch (error: any) {

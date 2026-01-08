@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { IconClock, IconImage, IconClose, IconInbox } from '$lib/components/icons';
+	import { toast } from 'svelte-sonner';
 
 	interface HistoryItem {
 		id: string;
@@ -52,7 +53,21 @@
 								<p class="text-xs text-slate-400">{item.action || 'Processed'}</p>
 							</div>
 						</a>
-						<form method="POST" action="?/delete" use:enhance>
+						<form
+							method="POST"
+							action="?/delete"
+							use:enhance={() => {
+								return async ({ update, result }) => {
+									await update();
+									if (result.type === 'success') {
+										toast.success('History item deleted');
+									} else if (result.type === 'failure') {
+										const msg = result.data?.message;
+										toast.error(typeof msg === 'string' ? msg : 'Failed to delete item');
+									}
+								};
+							}}
+						>
 							<input type="hidden" name="historyId" value={item.id} />
 							<button type="submit" class="text-violet-400 transition-colors hover:text-red-400">
 								<IconClose class="h-5 w-5" />
