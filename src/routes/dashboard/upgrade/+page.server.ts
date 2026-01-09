@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const plans = await pricingService.getPlans();
 
 	const activeSubscription = await subscriptionService.getActiveSubscription(locals.user.id);
+	const paymentMethods = await subscriptionService.listPaymentMethods(locals.user.id);
 
 	return {
 		plans: plans.map((plan) => ({
@@ -25,6 +26,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			isPopular: plan.name === 'pro',
 			isActive: activeSubscription?.planId === plan.id
 		})),
-		activeSubscription
+		activeSubscription,
+		paymentMethods
 	};
 };

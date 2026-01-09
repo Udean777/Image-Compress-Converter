@@ -3,7 +3,17 @@ import { prisma } from '../db';
 import { creditService, CreditService } from './CreditService';
 import { pricingService, PricingService } from './PricingService';
 
-export interface SubscriptionWithPlan extends Subscription {
+export interface SubscriptionWithPlan {
+	id: string;
+	userId: string;
+	planId: string;
+	status: string;
+	currentPeriodStart: Date;
+	currentPeriodEnd: Date;
+	creditsRemaining: number;
+	cancelledAt: Date | null;
+	createdAt: Date;
+	stripeSubscriptionId: string | null;
 	plan: PricingPlan;
 }
 
@@ -11,6 +21,7 @@ export interface CreateSubscriptionInput {
 	userId: string;
 	planId: string;
 	paymentId?: string;
+	stripeSubscriptionId?: string;
 }
 
 export class SubscriptionService {
@@ -32,7 +43,7 @@ export class SubscriptionService {
 		return this.db.subscription.findFirst({
 			where: {
 				userId,
-				status: 'active',
+				status: { in: ['active', 'cancelled'] },
 				currentPeriodEnd: { gte: new Date() }
 			},
 			include: { plan: true },
@@ -40,8 +51,15 @@ export class SubscriptionService {
 		});
 	}
 
+	async getSubscriptionByStripeId(stripeSubscriptionId: string): Promise<Subscription | null> {
+		return this.db.subscription.findUnique({
+			where: { stripeSubscriptionId }
+		});
+	}
+
 	async activateSubscription(input: CreateSubscriptionInput): Promise<SubscriptionWithPlan> {
 		const { userId, planId, paymentId } = input;
+
 		const plan = await this.db.pricingPlan.findUniqueOrThrow({
 			where: { id: planId }
 		});
@@ -59,7 +77,8 @@ export class SubscriptionService {
 		}
 
 		const result = await this.db.$transaction(async (tx) => {
-			await tx.subscription.updateMany({
+			// 1. Mark ANY existing active subs as cancelled (Gracefully handling plan changes)
+			const cancelledResults = await tx.subscription.updateMany({
 				where: {
 					userId,
 					status: 'active'
@@ -69,12 +88,23 @@ export class SubscriptionService {
 					cancelledAt: now
 				}
 			});
+			// 2. Expire credits from the "most recent" sub if it was a paid one
+			const existingSub = await tx.subscription.findFirst({
+				where: {
+					userId,
+					status: { in: ['active', 'cancelled'] },
+					currentPeriodEnd: { gte: now }
+				},
+				include: { plan: true },
+				orderBy: { createdAt: 'desc' }
+			});
 
-			const existingSub = await this.getActiveSubscription(userId);
 			if (existingSub && existingSub.plan.price > 0) {
+				console.log(`[SubscriptionService] Expiring credits for old sub ${existingSub.id}`);
 				await this.creditSvc.expireCredits(userId, existingSub.id);
 			}
 
+			// 3. Create the new subscription record
 			const subscription = await tx.subscription.create({
 				data: {
 					userId,
@@ -82,12 +112,13 @@ export class SubscriptionService {
 					status: 'active',
 					currentPeriodStart: now,
 					currentPeriodEnd: periodEnd,
-					creditsRemaining: plan.credits
+					creditsRemaining: plan.credits,
+					stripeSubscriptionId: input.stripeSubscriptionId
 				},
 				include: { plan: true }
 			});
 
-			// Tambahkan rekaman pembayaran di sini agar muncul di History
+			// 4. Create the payment record for history tracking
 			await tx.payment.create({
 				data: {
 					userId,
@@ -96,11 +127,12 @@ export class SubscriptionService {
 					currency: plan.currency,
 					status: 'paid',
 					paymentType: 'stripe',
-					midtransOrderId: paymentId || `SUB-${subscription.id}`, // Gunakan paymentId dari Stripe
+					midtransOrderId: paymentId || `SUB-${subscription.id}`,
 					paidAt: now
 				}
 			});
 
+			// 5. Add the actual credits to the user's account
 			await this.creditSvc.addCredits(
 				userId,
 				plan.credits,
@@ -108,8 +140,12 @@ export class SubscriptionService {
 				`${plan.displayName} subscription activated`,
 				paymentId
 			);
+
+			console.log(`[SubscriptionService] Added ${plan.credits} credits to user ${userId}`);
+
 			return subscription;
 		});
+
 		return result;
 	}
 
@@ -124,6 +160,21 @@ export class SubscriptionService {
 
 		if (!subscription) {
 			throw new Error('Active subscription not found');
+		}
+
+		// Jika ada ID Stripe, batalkan di Stripe juga
+		if (subscription.stripeSubscriptionId) {
+			const { Stripe } = await import('stripe'); // Import dinamis untuk menghindari issue SSR
+			const { STRIPE_SECRET_KEY } = await import('$env/static/private');
+			const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+			try {
+				await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+				console.log(`✅ Subscription ${subscription.stripeSubscriptionId} cancelled in Stripe`);
+			} catch (err) {
+				console.error('Failed to cancel subscription in Stripe:', err);
+				// Kita tetep lanjut update DB lokal meskipun Stripe gagal (atau handle sesuai kebijakan)
+			}
 		}
 
 		return this.db.subscription.update({
@@ -183,6 +234,138 @@ export class SubscriptionService {
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
 		return Math.max(0, diffDays);
+	}
+
+	/**
+	 * Menangani perpanjangan otomatis dari Stripe (invoice.paid)
+	 * Kita refresh kredit user dan perbarui masa aktif.
+	 */
+	async handleRenewal(
+		stripeSubscriptionId: string,
+		periodEnd: Date,
+		referenceId: string
+	): Promise<void> {
+		const subscription = await this.db.subscription.findUnique({
+			where: { stripeSubscriptionId },
+			include: { plan: true }
+		});
+
+		if (!subscription) {
+			console.error(`[Renewal] Subscription not found for Stripe ID: ${stripeSubscriptionId}`);
+			return;
+		}
+
+		await this.db.$transaction(async (tx) => {
+			// 1. Update masa aktif subscription
+			await tx.subscription.update({
+				where: { id: subscription.id },
+				data: {
+					currentPeriodEnd: periodEnd,
+					status: 'active' // Pastikan status kembali active jika sebelumnya cancelled
+				}
+			});
+
+			// 2. Tambah kredit baru sesuai paket
+			await this.creditSvc.addCredits(
+				subscription.userId,
+				subscription.plan.credits,
+				'subscription_renew',
+				`Renewed ${subscription.plan.displayName} subscription`,
+				referenceId
+			);
+
+			console.log(`✅ [Renewal] Processed for user ${subscription.userId}. Credits refreshed.`);
+		});
+	}
+
+	/**
+	 * Menangani penghentian layanan sepenuhnya (customer.subscription.deleted)
+	 * Biasanya dipicu saat masa aktif sisa dari langganan yang sudah "cancelled" benar-benar habis.
+	 */
+	async handleExpiry(stripeSubscriptionId: string): Promise<void> {
+		const subscription = await this.db.subscription.findUnique({
+			where: { stripeSubscriptionId }
+		});
+
+		if (!subscription) return;
+
+		await this.db.$transaction(async (tx) => {
+			// 1. Ubah status jadi expired
+			await tx.subscription.update({
+				where: { id: subscription.id },
+				data: { status: 'expired' }
+			});
+
+			// 2. Kredit sisa hangus (opsional, tergantung kebijakan)
+			await this.creditSvc.expireCredits(subscription.userId, subscription.id);
+
+			console.log(`🚨 [Expiry] Subscription ${subscription.id} is now expired.`);
+		});
+	}
+
+	async getOrCreateCustomerId(userId: string): Promise<string> {
+		const user = await this.db.user.findUniqueOrThrow({
+			where: {
+				id: userId
+			}
+		});
+
+		const { Stripe } = await import('stripe');
+		const { STRIPE_SECRET_KEY } = await import('$env/static/private');
+		const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+		const customers = await stripe.customers.list({
+			email: user.email,
+			limit: 1
+		});
+
+		if (customers.data.length > 0) {
+			return customers.data[0].id;
+		}
+
+		const customer = await stripe.customers.create({
+			email: user.email,
+			name: user.name ?? undefined,
+			metadata: { userId: user.id }
+		});
+
+		return customer.id;
+	}
+
+	async createSetupIntent(userId: string) {
+		const { Stripe } = await import('stripe');
+		const { STRIPE_SECRET_KEY } = await import('$env/static/private');
+		const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+		const customerId = await this.getOrCreateCustomerId(userId);
+
+		return stripe.setupIntents.create({
+			customer: customerId,
+			payment_method_types: ['card']
+		});
+	}
+
+	async listPaymentMethods(userId: string) {
+		const { Stripe } = await import('stripe');
+		const { STRIPE_SECRET_KEY } = await import('$env/static/private');
+		const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+		const customerId = await this.getOrCreateCustomerId(userId);
+
+		const paymentMethods = await stripe.paymentMethods.list({
+			customer: customerId,
+			type: 'card'
+		});
+
+		return paymentMethods.data;
+	}
+
+	async deletePaymentMethod(paymentMethodId: string) {
+		const { Stripe } = await import('stripe');
+		const { STRIPE_SECRET_KEY } = await import('$env/static/private');
+		const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+		return stripe.paymentMethods.detach(paymentMethodId);
 	}
 }
 

@@ -19,7 +19,7 @@
 		"docker:logs": "docker-compose logs -f",
 		"docker:build": "docker-compose up -d --build",
 		"docker:clean": "docker-compose down -v",
-		"seed:pricing": "bunx tsx prisma/seed/seed-pricing.ts"
+		"db:seed": "bunx tsx prisma/seed/seed-pricing.ts"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.10.0",
@@ -58,6 +58,7 @@
 		"@lucide/svelte": "^0.561.0",
 		"@prisma/adapter-pg": "^7.2.0",
 		"@prisma/client": "^7.2.0",
+		"@stripe/stripe-js": "^8.6.1",
 		"@types/bcryptjs": "^3.0.0",
 		"arctic": "^3.7.0",
 		"bcryptjs": "^3.0.3",

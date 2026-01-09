@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { CreditCard, Receipt, ExternalLink, Zap } from '@lucide/svelte';
+	import { Receipt, Zap, AlertCircle } from '@lucide/svelte';
 	import type { PageProps } from './$types';
+	import type { SubscriptionWithPlan } from '$lib/server/services/SubscriptionService';
+	import PaymentMethodManager from '$lib/components/dashboard/PaymentMethodManager.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	let { data }: PageProps = $props();
-	const { activeSubscription, payments } = $derived(data);
+	const { payments } = $derived(data);
+	const activeSubscription = $derived(data.activeSubscription as SubscriptionWithPlan | null);
 
 	const formatDate = (date: Date) => {
 		return new Date(date).toLocaleDateString('id-ID', {
@@ -43,16 +47,61 @@
 					<div>
 						<p class="text-2xl font-bold">{activeSubscription.plan.displayName}</p>
 						<p class="text-sm text-muted-foreground">
-							Masa aktif hingga {formatDate(activeSubscription.currentPeriodEnd)}
+							{activeSubscription.status === 'cancelled'
+								? 'Akses Berakhir Pada'
+								: 'Masa aktif hingga'}
+							{formatDate(activeSubscription.currentPeriodEnd)}
 						</p>
 					</div>
-					<Badge variant="default" class="bg-green-500 hover:bg-green-600">Active</Badge>
+					<Badge
+						variant={activeSubscription.status === 'cancelled' ? 'secondary' : 'default'}
+						class={activeSubscription.status === 'cancelled'
+							? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+							: 'bg-green-500 hover:bg-green-600'}
+					>
+						{activeSubscription.status === 'cancelled' ? 'Cancelled' : 'Active'}
+					</Badge>
 				</div>
-				<div class="mt-6 flex gap-3">
+				<div class="mt-6 flex flex-wrap gap-3">
 					<Button href="/dashboard/upgrade" size="sm">Ganti Paket</Button>
-					<Button href="/api/stripe/portal" variant="outline" size="sm" class="gap-2">
-						Kelola di Stripe <ExternalLink class="h-3 w-3" />
-					</Button>
+
+					{#if activeSubscription.status !== 'cancelled'}
+						<Dialog.Root>
+							<Dialog.Trigger>
+								<Button variant="destructive" size="sm">Batalkan Langganan</Button>
+							</Dialog.Trigger>
+							<Dialog.Content class="border-border bg-background">
+								<Dialog.Header>
+									<Dialog.Title class="text-xl font-semibold text-destructive">
+										Batalkan Langganan
+									</Dialog.Title>
+									<Dialog.Description class="text-muted-foreground">
+										Apakah Anda yakin ingin membatalkan langganan? Anda akan tetap memiliki akses
+										hingga akhir periode penagihan saat ini pada {formatDate(
+											activeSubscription.currentPeriodEnd
+										)}.
+									</Dialog.Description>
+								</Dialog.Header>
+								<Dialog.Footer>
+									<Dialog.Close>
+										<Button variant="ghost">Kembali</Button>
+									</Dialog.Close>
+									<form method="POST" action="?/cancel">
+										<Button type="submit" variant="destructive" class="w-full sm:w-auto">
+											Ya, Batalkan Langganan
+										</Button>
+									</form>
+								</Dialog.Footer>
+							</Dialog.Content>
+						</Dialog.Root>
+					{:else}
+						<div class="flex items-center gap-2 text-sm font-medium text-amber-600">
+							<AlertCircle class="h-4 w-4" />
+							Berlangganan dihentikan (Akan berakhir pada {formatDate(
+								activeSubscription.currentPeriodEnd
+							)})
+						</div>
+					{/if}
 				</div>
 			{:else}
 				<p class="text-muted-foreground">Anda belum berlangganan paket berbayar.</p>
@@ -61,15 +110,7 @@
 		</div>
 
 		<div class="rounded-2xl border bg-card p-6">
-			<h3 class="mb-4 flex items-center gap-2 font-semibold">
-				<CreditCard class="h-4 w-4 text-primary" /> Metode Pembayaran
-			</h3>
-			<p class="mb-4 text-sm text-muted-foreground">
-				Metode pembayaran Anda dikelola secara aman oleh Stripe.
-			</p>
-			<Button href="/api/stripe/portal" variant="outline" size="sm">
-				Update Metode Pembayaran
-			</Button>
+			<PaymentMethodManager />
 		</div>
 	</div>
 

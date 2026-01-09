@@ -64,18 +64,18 @@ model PricingPlan {
 }
 
 model Subscription {
-  id                 String      @id @default(uuid())
-  userId             String
-  planId             String
-  status             String      @default("active")
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  creditsRemaining   Int         @default(0)
-  cancelledAt        DateTime?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan               PricingPlan @relation(fields: [planId], references: [id])
+  id                   String      @id @default(uuid())
+  userId               String
+  planId               String
+  status               String      @default("active")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  creditsRemaining     Int         @default(0)
+  cancelledAt          DateTime?
+  createdAt            DateTime    @default(now())
+  stripeSubscriptionId String?     @unique
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 PricingPlan @relation(fields: [planId], references: [id])
 
   @@index([userId])
   @@index([status])

@@ -37,6 +37,18 @@ export class CreditService {
 		referenceId?: string
 	): Promise<AddCreditsResult> {
 		const result = await this.db.$transaction(async (tx) => {
+			// Idempotency check: jika referenceId sudah ada, jangan tambah lagi
+			if (referenceId) {
+				const existingTransaction = await tx.creditTransaction.findFirst({
+					where: { referenceId, type }
+				});
+
+				if (existingTransaction) {
+					const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
+					return { newBalance: user.credits, transaction: existingTransaction };
+				}
+			}
+
 			const user = await tx.user.update({
 				where: { id: userId },
 				data: { credits: { increment: amount } }

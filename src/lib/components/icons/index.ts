@@ -23,5 +23,6 @@ export {
 	Menu as IconMenu,
 	ChevronLeft as IconChevronLeft,
 	Eye as IconEye,
-	EyeOff as IconEyeOff
+	EyeOff as IconEyeOff,
+	CreditCard as IconBilling
 } from '@lucide/svelte';

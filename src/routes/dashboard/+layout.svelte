@@ -45,7 +45,7 @@
 		</Dialog.Header>
 		<Dialog.Footer class="flex gap-3 sm:justify-end">
 			<Button variant="outline" onclick={() => (showLogoutDialog = false)}>Cancel</Button>
-			<form method="POST" action="?/logout" use:enhance>
+			<form method="POST" action="/dashboard?/logout" use:enhance>
 				<Button type="submit" variant="destructive">
 					<IconLogout class="mr-2 h-4 w-4" />
 					Logout

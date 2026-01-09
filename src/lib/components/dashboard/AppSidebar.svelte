@@ -5,19 +5,25 @@
 		IconHistory,
 		IconSettings,
 		IconStar,
-		IconImage
+		IconImage,
+		IconBilling
 	} from '$lib/components/icons';
 	import { page } from '$app/stores';
 	import SubscriptionWidget from './SubscriptionWidget.svelte';
 
 	let { user }: { user: any } = $props();
 
-	const navItems = [
+	const platformNav = [
 		{ href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
-		{ href: '/dashboard/history', label: 'History', icon: IconHistory },
-		{ href: '/dashboard/settings', label: 'Settings', icon: IconSettings },
-		{ href: '/dashboard/upgrade', label: 'Upgrade', icon: IconStar }
+		{ href: '/dashboard/history', label: 'History', icon: IconHistory }
 	];
+
+	const billingNav = [
+		{ href: '/dashboard/upgrade', label: 'Upgrade', icon: IconStar },
+		{ href: '/dashboard/billing', label: 'Billing', icon: IconBilling }
+	];
+
+	const settingsNav = [{ href: '/dashboard/settings', label: 'Settings', icon: IconSettings }];
 </script>
 
 <Sidebar.Root collapsible="icon">
@@ -35,7 +41,6 @@
 					</div>
 					<div class="grid flex-1 text-left text-sm leading-tight">
 						<span class="truncate font-semibold">Image Studio</span>
-						<!-- <span class="truncate text-xs">Vivnio</span> -->
 					</div>
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
@@ -46,7 +51,49 @@
 			<Sidebar.GroupLabel>Platform</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					{#each navItems as item}
+					{#each platformNav as item}
+						{@const isActive = $page.url.pathname === item.href}
+						<Sidebar.MenuItem>
+							<Sidebar.MenuButton {isActive}>
+								{#snippet child({ props })}
+									<a href={item.href} {...props}>
+										<item.icon />
+										<span>{item.label}</span>
+									</a>
+								{/snippet}
+							</Sidebar.MenuButton>
+						</Sidebar.MenuItem>
+					{/each}
+				</Sidebar.Menu>
+			</Sidebar.GroupContent>
+		</Sidebar.Group>
+
+		<Sidebar.Group>
+			<Sidebar.GroupLabel>Billing</Sidebar.GroupLabel>
+			<Sidebar.GroupContent>
+				<Sidebar.Menu>
+					{#each billingNav as item}
+						{@const isActive = $page.url.pathname === item.href}
+						<Sidebar.MenuItem>
+							<Sidebar.MenuButton {isActive}>
+								{#snippet child({ props })}
+									<a href={item.href} {...props}>
+										<item.icon />
+										<span>{item.label}</span>
+									</a>
+								{/snippet}
+							</Sidebar.MenuButton>
+						</Sidebar.MenuItem>
+					{/each}
+				</Sidebar.Menu>
+			</Sidebar.GroupContent>
+		</Sidebar.Group>
+
+		<Sidebar.Group>
+			<Sidebar.GroupLabel>Account</Sidebar.GroupLabel>
+			<Sidebar.GroupContent>
+				<Sidebar.Menu>
+					{#each settingsNav as item}
 						{@const isActive = $page.url.pathname === item.href}
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton {isActive}>
