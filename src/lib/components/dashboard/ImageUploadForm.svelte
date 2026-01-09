@@ -118,8 +118,6 @@
 				return async ({ update, result }) => {
 					await update();
 					loading = false;
-					files = [];
-					onSubmitEnd?.();
 
 					if (result.type === 'success') {
 						onSuccess?.(files.map((f) => f.file));
@@ -128,11 +126,12 @@
 						const msg = result.data?.message;
 						toast.error(typeof msg === 'string' ? msg : 'Failed to process image');
 					}
+
+					files = [];
+					onSubmitEnd?.();
 				};
 			}}
 		>
-			<!-- Custom Dropzone -->
-			<!-- Drag & Drop Zone -->
 			<div
 				class="group relative w-full cursor-pointer rounded-2xl border-2 border-dashed p-4 text-center transition-all duration-300 sm:p-8
 					{dragOver
@@ -179,7 +178,6 @@
 						<p class="text-sm text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
 					</div>
 				{:else}
-					<!-- Gallery Grid -->
 					<div
 						class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4"
 						role="none"
@@ -214,7 +212,6 @@
 							</div>
 						{/each}
 
-						<!-- Add More Button -->
 						<button
 							type="button"
 							onclick={(e) => {
@@ -243,7 +240,6 @@
 							{/each}
 						</Select.Content>
 					</Select.Root>
-					<!-- Fallback hidden input just in case Select.Root name prop doesn't work as expected in submission -->
 					<input type="hidden" name="action" value={action} />
 				</div>
 
