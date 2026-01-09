@@ -6,6 +6,18 @@
 	let { data, form }: PageProps = $props();
 
 	let showSuccessResult = $derived(form?.success && form?.results?.length > 0);
+	let originalObjectUrls = $state<string[]>([]);
+
+	function handleSuccess(files: File[]) {
+		// Clean up previous URLs
+		originalObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+		originalObjectUrls = files.map((file) => URL.createObjectURL(file));
+	}
+
+	import { onDestroy } from 'svelte';
+	onDestroy(() => {
+		originalObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+	});
 </script>
 
 <div class="space-y-8">
@@ -15,15 +27,15 @@
 	</header>
 
 	<div class="relative grid w-full gap-4 sm:gap-6 xl:grid-cols-2">
-		<ImageUploadForm />
+		<ImageUploadForm onSuccess={handleSuccess} />
 
 		<div class="w-full min-w-0 space-y-6 overflow-x-hidden">
 			{#if showSuccessResult && form?.results}
 				<div class="space-y-4">
 					<h3 class="font-semibold text-foreground">Just Processed</h3>
-					{#each form.results as result}
+					{#each form.results as result, i}
 						{#if 'url' in result}
-							<ProcessResult {result} />
+							<ProcessResult {result} originalUrl={originalObjectUrls[i]} />
 						{:else if 'data' in result && result.data?.message}
 							<div
 								class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20"

@@ -36,23 +36,17 @@
 </Sidebar.Provider>
 
 <Dialog.Root bind:open={showLogoutDialog}>
-	<Dialog.Content class="border-white/10 bg-slate-900 sm:max-w-md">
+	<Dialog.Content class="border-border bg-card sm:max-w-md">
 		<Dialog.Header>
-			<Dialog.Title class="text-white">Confirm Logout</Dialog.Title>
-			<Dialog.Description class="text-slate-400">
+			<Dialog.Title class="text-foreground">Confirm Logout</Dialog.Title>
+			<Dialog.Description class="text-muted-foreground">
 				Are you sure you want to logout? You will need to sign in again to access your account.
 			</Dialog.Description>
 		</Dialog.Header>
 		<Dialog.Footer class="flex gap-3 sm:justify-end">
-			<Button
-				variant="outline"
-				onclick={() => (showLogoutDialog = false)}
-				class="border-white/10 bg-transparent text-white hover:bg-white"
-			>
-				Cancel
-			</Button>
+			<Button variant="outline" onclick={() => (showLogoutDialog = false)}>Cancel</Button>
 			<form method="POST" action="?/logout" use:enhance>
-				<Button type="submit" variant="destructive" class="bg-red-600 text-white hover:bg-red-700">
+				<Button type="submit" variant="destructive">
 					<IconLogout class="mr-2 h-4 w-4" />
 					Logout
 				</Button>

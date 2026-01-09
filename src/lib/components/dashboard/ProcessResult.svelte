@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { IconCheck, IconDownload } from '$lib/components/icons';
+	import { ImageComparer } from '$lib/components/dashboard';
 	import { formatBytes } from '$lib/format';
 	import type { ProcessSuccess } from '$lib/types/image.types';
 
 	interface Props {
 		result: ProcessSuccess;
+		originalUrl?: string;
 	}
 
-	let { result }: Props = $props();
+	let { result, originalUrl }: Props = $props();
 </script>
 
 <section
@@ -40,11 +42,20 @@
 	</div>
 
 	<div class="mb-4 rounded-2xl bg-muted/50 p-4">
-		<img
-			src={result?.url}
-			alt="Processed result"
-			class="h-auto max-h-72 w-full rounded-xl object-contain"
-		/>
+		{#if originalUrl}
+			<ImageComparer
+				beforeImage={originalUrl}
+				afterImage={result.url}
+				beforeLabel="Original"
+				afterLabel="Processed"
+			/>
+		{:else}
+			<img
+				src={result?.url}
+				alt="Processed result"
+				class="h-auto max-h-72 w-full rounded-xl object-contain"
+			/>
+		{/if}
 	</div>
 
 	<a
