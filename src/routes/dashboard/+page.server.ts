@@ -33,53 +33,80 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 
 export const actions: Actions = {
 	process: async ({ locals, request }) => {
-		if (!locals.user) return fail(401, { message: 'Unauthorized' });
+		if (!locals.user)
+			return fail(401, {
+				message: 'Unauthorized'
+			});
 
 		const user = locals.user;
 		const formData = await request.formData();
-		const file = formData.get('image') as File;
+
+		const files = formData.getAll('image') as File[];
 		const type = formData.get('action') as ProcessType;
 		const targetFormat = formData.get('format') as ImageFormat;
+		const quality = parseInt(formData.get('quality') as string) || 80;
+		const width = formData.get('width') ? parseInt(formData.get('width') as string) : undefined;
+		const height = formData.get('height') ? parseInt(formData.get('height') as string) : undefined;
+		const watermarkFile = formData.get('watermark') as File;
+		const watermarkPosition = formData.get('watermarkPosition') as any;
 
-		if (!file || file.size === 0) {
-			return fail(400, { message: 'Please upload a valid image' });
+		if (!files || files.length === 0 || files[0].size === 0) {
+			return fail(400, { message: 'Please upload at least one valid image' });
 		}
-		if (file.size > 5 * 1024 * 1024) {
-			return fail(400, { message: 'File size exceeds 5MB limit' });
+
+		const currentCredits = await userService.getUserCredits(user.id);
+		if (currentCredits < files.length) {
+			return fail(400, { message: `Insufficient credits. You need ${files.length} credits.` });
 		}
 
 		try {
-			const currentCredits = await userService.getUserCredits(user.id);
-			if (currentCredits < 1) {
-				return fail(400, { message: 'Insufficient credits' });
-			}
+			const results = await Promise.all(
+				files.map(async (file) => {
+					if (file.size > 10 * 1024 * 1024) {
+						return fail(400, { message: 'Image size exceeds 10MB' });
+					}
 
-			const result = await imageService.process({
-				file,
-				type: type || ProcessType.COMPRESS,
-				targetFormat,
-				userId: user.id
-			});
+					const result = await imageService.process({
+						file,
+						type: type || ProcessType.COMPRESS,
+						targetFormat,
+						userId: user.id,
+						quality,
+						resize: width || height ? { width, height } : undefined,
+						watermark:
+							watermarkFile?.size > 0
+								? {
+										file: watermarkFile,
+										position: watermarkPosition || 'southeast'
+									}
+								: undefined
+					});
 
-			const newCreditBalance = await userService.recordActivity(
-				user.id,
-				type,
-				targetFormat,
-				result.fileName,
-				result.publicUrl
+					await userService.recordActivity(
+						user.id,
+						type,
+						targetFormat,
+						result.fileName,
+						result.publicUrl
+					);
+
+					return {
+						url: result.publicUrl,
+						downloadUrl: result.downloadUrl,
+						originalSize: result.originalSize,
+						newSize: result.newSize,
+						format: result.format,
+						stats: `Saved ${(100 - (result.newSize / result.originalSize) * 100).toFixed(1)}%`
+					};
+				})
 			);
+
+			const newCreditBalance = currentCredits - files.length;
 
 			return {
 				success: true,
 				newCredits: newCreditBalance,
-				result: {
-					url: result.publicUrl,
-					downloadUrl: result.downloadUrl,
-					originalSize: result.originalSize,
-					newSize: result.newSize,
-					format: result.format,
-					stats: `Saved ${(100 - (result.newSize / result.originalSize) * 100).toFixed(1)}% size!`
-				}
+				results: results
 			};
 		} catch (error: any) {
 			console.error(error);

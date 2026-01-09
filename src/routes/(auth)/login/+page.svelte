@@ -15,7 +15,6 @@
 	<div
 		class="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl"
 	>
-		<!-- Header -->
 		<div class="mb-8 text-center">
 			<div
 				class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 shadow-lg"
@@ -26,7 +25,6 @@
 			<p class="mt-2 text-slate-400">Sign in to your account</p>
 		</div>
 
-		<!-- Error Message -->
 		{#if form?.message}
 			<div
 				class="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4"
@@ -36,7 +34,6 @@
 			</div>
 		{/if}
 
-		<!-- Form -->
 		<form
 			method="POST"
 			use:enhance={() => {
@@ -109,7 +106,6 @@
 			</button>
 		</form>
 
-		<!-- Footer -->
 		<p class="mt-6 text-center text-sm text-slate-400">
 			Don't have an account?
 			<a href="/register" class="font-medium text-violet-400 hover:text-violet-300">Sign up</a>

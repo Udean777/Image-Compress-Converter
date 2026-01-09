@@ -11,7 +11,7 @@
 
 <div class="space-y-6">
 	<header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<div class="flex items-center gap-3">
+		<div class="flex w-full items-center justify-between gap-3">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30"

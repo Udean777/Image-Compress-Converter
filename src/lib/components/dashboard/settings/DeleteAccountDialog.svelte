@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button } from '$lib/components/ui/button';
 	import { IconEye, IconEyeOff, IconError, IconLoader } from '$lib/components/icons';
 	import { enhance } from '$app/forms';
 	import { toast } from 'svelte-sonner';
@@ -54,17 +55,19 @@
 								placeholder="Enter your password"
 								class="w-full rounded-xl border border-input bg-background px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground/70 focus:border-destructive/50 focus:ring-4 focus:ring-destructive/10 focus:outline-hidden"
 							/>
-							<button
+							<Button
+								variant="ghost"
+								size="icon"
 								type="button"
-								class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								class="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 								onclick={() => (showDeletePassword = !showDeletePassword)}
 							>
 								{#if showDeletePassword}
-									<IconEyeOff class="h-5 w-5" />
+									<IconEyeOff class="h-4 w-4" />
 								{:else}
-									<IconEye class="h-5 w-5" />
+									<IconEye class="h-4 w-4" />
 								{/if}
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -84,22 +87,12 @@
 			{/if}
 		</div>
 
-		<Dialog.Footer class="gap-2 sm:gap-0">
-			<button
-				type="button"
-				onclick={() => (open = false)}
-				class="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-			>
-				Cancel
-			</button>
+		<Dialog.Footer class="gap-2">
+			<Button variant="ghost" type="button" onclick={() => (open = false)}>Cancel</Button>
 			{#if deleteStep === 1}
-				<button
-					onclick={() => (deleteStep = 2)}
-					disabled={!deletePassword}
-					class="rounded-lg bg-secondary px-6 py-2 text-sm font-semibold text-secondary-foreground transition-all hover:bg-secondary/80 disabled:opacity-50"
-				>
+				<Button variant="secondary" onclick={() => (deleteStep = 2)} disabled={!deletePassword}>
 					Next Step
-				</button>
+				</Button>
 			{:else}
 				<form
 					method="POST"
@@ -119,18 +112,14 @@
 					}}
 				>
 					<input type="hidden" name="password" value={deletePassword} />
-					<button
-						type="submit"
-						disabled={loading}
-						class="text-destructive-foreground w-full rounded-lg bg-destructive px-6 py-2 text-sm font-semibold shadow-lg transition-all hover:bg-destructive/90 disabled:opacity-50"
-					>
+					<Button variant="destructive" type="submit" disabled={loading} class="w-full shadow-lg">
 						{#if loading}
 							<IconLoader class="mr-2 h-4 w-4 animate-spin" />
 							Deleting...
 						{:else}
 							Permanently Delete My Account
 						{/if}
-					</button>
+					</Button>
 				</form>
 			{/if}
 		</Dialog.Footer>

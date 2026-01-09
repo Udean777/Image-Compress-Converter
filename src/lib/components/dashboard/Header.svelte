@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { IconLogout, IconUser, IconSun, IconMoon, IconMenu } from '$lib/components/icons';
+	import { IconUser, IconMoon, IconSun } from '$lib/components/icons';
+	import * as Avatar from '$lib/components/ui/avatar';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { enhance } from '$app/forms';
-	import type { Snippet } from 'svelte';
+	import * as Sidebar from '$lib/components/ui/sidebar';
+	import { Button } from '$lib/components/ui/button';
 	import { mode, setMode } from 'mode-watcher';
+	import type { Snippet } from 'svelte';
 
 	interface User {
 		name: string | null;
@@ -13,10 +15,10 @@
 
 	interface Props {
 		user: User;
-		logoutForm?: Snippet;
+		children?: Snippet;
 	}
 
-	let { user, logoutForm }: Props = $props();
+	let { user, children }: Props = $props();
 
 	function toggleTheme() {
 		setMode(mode.current === 'dark' ? 'light' : 'dark');
@@ -24,17 +26,11 @@
 </script>
 
 <header
-	class="sticky top-0 z-30 flex h-16 items-center justify-end gap-4 border-b border-border bg-background/80 px-6 backdrop-blur-xl"
+	class="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-4 overflow-x-hidden border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6"
 >
-	<button
-		class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
-	>
-		<IconMenu class="h-5 w-5" />
-	</button>
+	<Sidebar.Trigger />
 
-	<div class="flex-1 md:hidden"></div>
-
-	<div class="flex items-center gap-3">
+	<div class="flex items-center gap-2">
 		<button
 			onclick={toggleTheme}
 			class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
@@ -95,8 +91,12 @@
 
 				<DropdownMenu.Separator />
 
-				{#if logoutForm}
-					{@render logoutForm()}
+				{#if children}
+					{@render children()}
+				{:else}
+					<button class="w-full text-left">
+						<DropdownMenu.Item>Logout</DropdownMenu.Item>
+					</button>
 				{/if}
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>

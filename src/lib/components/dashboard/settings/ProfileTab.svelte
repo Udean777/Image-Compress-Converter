@@ -11,7 +11,6 @@
 	let avatarImage = $state<string | null>(null);
 	let fileInput = $state<HTMLInputElement>();
 
-	// Add cache buster to avatar URL
 	let avatarUrl = $derived(user.avatarUrl ? `${user.avatarUrl}?t=${Date.now()}` : null);
 
 	function onFileChange(e: Event) {
@@ -24,13 +23,12 @@
 			};
 			reader.readAsDataURL(input.files[0]);
 		}
-		// Reset input value so same file can be selected again
+
 		input.value = '';
 	}
 </script>
 
 <div class="max-w-xl space-y-8">
-	<!-- Avatar Upload -->
 	<div class="flex items-center gap-6">
 		<div class="relative h-20 w-20 shrink-0">
 			{#if avatarUrl}
@@ -68,7 +66,6 @@
 
 	<div class="h-px bg-border"></div>
 
-	<!-- Profile Form -->
 	<form
 		method="POST"
 		action="?/updateProfile"

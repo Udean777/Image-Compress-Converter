@@ -170,7 +170,7 @@ export const actions: Actions = {
 		}
 	},
 
-	deleteAccount: async ({ request, locals }) => {
+	deleteAccount: async ({ request, locals, cookies }) => {
 		if (!locals.user) {
 			return fail(401, { message: 'Unauthorized' });
 		}
@@ -207,7 +207,9 @@ export const actions: Actions = {
 				where: { id: locals.user.id }
 			});
 
-			// In a real app, you would also delete sessions, files from S3, etc.
+			// Clear session cookies
+			cookies.delete('access_token', { path: '/' });
+			cookies.delete('refresh_token', { path: '/' });
 		} catch (error) {
 			console.error('Delete account error:', error);
 			return fail(500, { message: 'Failed to delete account' });

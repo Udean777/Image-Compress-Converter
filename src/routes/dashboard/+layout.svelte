@@ -1,52 +1,39 @@
 <script lang="ts">
 	import type { LayoutProps } from './$types';
-	import { Sidebar, Header } from '$lib/components/dashboard';
+	import AppSidebar from '$lib/components/dashboard/AppSidebar.svelte';
+	import { Header } from '$lib/components/dashboard';
 	import { IconLogout } from '$lib/components/icons';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Button } from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
 	import { Toaster } from 'svelte-sonner';
 
 	let { data, children }: LayoutProps = $props();
 
-	let sidebarCollapsed = $state(false);
-
 	let showLogoutDialog = $state(false);
-
-	function toggleSidebar() {
-		sidebarCollapsed = !sidebarCollapsed;
-	}
 </script>
 
-<div class="flex min-h-screen bg-muted/40">
-	<Sidebar
-		credits={data.user.credits}
-		collapsed={sidebarCollapsed}
-		onToggleCollapse={toggleSidebar}
-	/>
-
-	<div
-		class="flex flex-1 flex-col transition-all duration-300 {sidebarCollapsed ? 'ml-20' : 'ml-64'}"
-	>
+<Sidebar.Provider>
+	<AppSidebar credits={data.user.credits} />
+	<Sidebar.Inset>
 		<Header user={data.user}>
-			{#snippet logoutForm()}
-				<button type="button" onclick={() => (showLogoutDialog = true)} class="w-full text-left">
-					<DropdownMenu.Item class="text-red-400 focus:bg-red-500/10 focus:text-red-400">
-						<IconLogout class="mr-2 h-4 w-4" />
-						Logout
-					</DropdownMenu.Item>
-				</button>
-			{/snippet}
+			<button type="button" onclick={() => (showLogoutDialog = true)} class="w-full text-left">
+				<DropdownMenu.Item class="text-red-400 focus:bg-red-500/10 focus:text-red-400">
+					<IconLogout class="mr-2 h-4 w-4" />
+					Logout
+				</DropdownMenu.Item>
+			</button>
 		</Header>
 
-		<main class="flex-1 p-6 md:p-10">
-			<div class="mx-auto max-w-6xl">
+		<main class="flex w-full flex-col p-4 md:p-10">
+			<div class="mx-auto w-full max-w-full">
 				{@render children()}
 			</div>
 		</main>
-	</div>
-</div>
+	</Sidebar.Inset>
+</Sidebar.Provider>
 
 <Dialog.Root bind:open={showLogoutDialog}>
 	<Dialog.Content class="border-white/10 bg-slate-900 sm:max-w-md">

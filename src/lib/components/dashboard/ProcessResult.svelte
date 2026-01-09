@@ -1,27 +1,20 @@
 <script lang="ts">
 	import { IconCheck, IconDownload } from '$lib/components/icons';
 	import { formatBytes } from '$lib/format';
-
-	interface ProcessResultData {
-		stats?: string;
-		originalSize?: number;
-		newSize?: number;
-		url?: string;
-		downloadUrl?: string;
-	}
+	import type { ProcessSuccess } from '$lib/types/image.types';
 
 	interface Props {
-		result: ProcessResultData;
+		result: ProcessSuccess;
 	}
 
 	let { result }: Props = $props();
 </script>
 
 <section
-	class="animate-in rounded-3xl border border-emerald-500/30 bg-card p-6 shadow-sm duration-500 fade-in md:p-8"
+	class="animate-in rounded-3xl border border-emerald-500/30 bg-card p-4 shadow-sm duration-500 fade-in sm:p-6 md:p-8"
 	aria-labelledby="success-title"
 >
-	<div class="mb-5 flex items-center gap-3">
+	<div class="mb-4 flex items-center gap-3">
 		<div
 			class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 shadow-lg shadow-emerald-500/30"
 		>
@@ -33,7 +26,7 @@
 		</div>
 	</div>
 
-	<div class="mb-5 grid grid-cols-2 gap-4">
+	<div class="mb-4 grid grid-cols-2 gap-3 sm:gap-4">
 		<div class="rounded-xl border border-border bg-muted/50 p-3">
 			<p class="mb-1 text-xs tracking-wider text-muted-foreground uppercase">Original</p>
 			<p class="font-medium text-foreground">{formatBytes(result?.originalSize ?? 0)}</p>
@@ -46,7 +39,7 @@
 		</div>
 	</div>
 
-	<div class="mb-5 rounded-2xl bg-muted/50 p-4">
+	<div class="mb-4 rounded-2xl bg-muted/50 p-4">
 		<img
 			src={result?.url}
 			alt="Processed result"

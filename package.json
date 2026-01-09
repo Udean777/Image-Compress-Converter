@@ -13,7 +13,12 @@
 		"format": "prettier --write .",
 		"lint": "prettier --check .",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"test": "npm run test:unit -- --run",
+		"docker:up": "docker-compose up -d",
+		"docker:down": "docker-compose down",
+		"docker:logs": "docker-compose logs -f",
+		"docker:build": "docker-compose up -d --build",
+		"docker:clean": "docker-compose down -v"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.10.0",
@@ -47,6 +52,7 @@
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.962.0",
 		"@aws-sdk/s3-request-presigner": "^3.962.0",
+		"@imgly/background-removal-node": "^1.4.5",
 		"@lucide/svelte": "^0.561.0",
 		"@prisma/adapter-pg": "^7.2.0",
 		"@prisma/client": "^7.2.0",

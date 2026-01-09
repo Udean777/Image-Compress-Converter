@@ -20,7 +20,7 @@
 </script>
 
 <section
-	class="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8"
+	class="rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-6 md:p-8"
 	aria-labelledby="history-title"
 >
 	<div class="mb-5 flex items-center gap-3">
@@ -39,13 +39,15 @@
 		<ul class="custom-scrollbar max-h-80 space-y-3 overflow-y-auto pr-2">
 			{#each history as item (item.id)}
 				<li class="rounded-xl border border-border p-4 transition-all duration-200 hover:bg-accent">
-					<div class="flex items-center justify-between">
-						<a href={item.outputUrl} download class="flex items-center gap-3">
+					<div class="flex items-center justify-between gap-3">
+						<a href={item.outputUrl} download class="flex min-w-0 flex-1 items-center gap-3">
 							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
 								<IconImage class="h-5 w-5 text-muted-foreground" />
 							</div>
-							<div>
-								<p class="text-sm font-medium text-foreground">{item.fileName || 'Image'}</p>
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-sm font-medium text-foreground">
+									{item.fileName || 'Image'}
+								</p>
 								<p class="text-xs text-muted-foreground">{item.action || 'Processed'}</p>
 							</div>
 						</a>

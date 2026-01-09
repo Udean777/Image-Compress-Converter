@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { IconDownload, IconTrash, IconLoader } from '$lib/components/icons';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
 
@@ -42,29 +42,31 @@
 			<IconDownload class="h-4 w-4" />
 			Download All
 		</button>
-		<AlertDialog.Root bind:open={showBulkDeleteDialog}>
-			<AlertDialog.Trigger>
+		<Dialog.Root bind:open={showBulkDeleteDialog}>
+			<Dialog.Trigger>
 				<button
 					class="inline-flex items-center gap-2 rounded-lg bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive transition-all hover:bg-destructive/20"
 				>
 					<IconTrash class="h-4 w-4" />
 					Delete All
 				</button>
-			</AlertDialog.Trigger>
-			<AlertDialog.Content class="border-border bg-background text-foreground">
-				<AlertDialog.Header>
-					<AlertDialog.Title>Are you absolutely sure?</AlertDialog.Title>
-					<AlertDialog.Description class="text-muted-foreground">
+			</Dialog.Trigger>
+			<Dialog.Content class="border-border bg-background text-foreground">
+				<Dialog.Header>
+					<Dialog.Title>Are you absolutely sure?</Dialog.Title>
+					<Dialog.Description class="text-muted-foreground">
 						This will permanently delete {selectedIds.length} items from your history. This action cannot
 						be undone.
-					</AlertDialog.Description>
-				</AlertDialog.Header>
-				<AlertDialog.Footer>
-					<AlertDialog.Cancel
+					</Dialog.Description>
+				</Dialog.Header>
+				<Dialog.Footer>
+					<Button
+						variant="secondary"
+						onclick={() => (showBulkDeleteDialog = false)}
 						class="border-border bg-secondary text-secondary-foreground hover:bg-secondary/80"
 					>
 						Cancel
-					</AlertDialog.Cancel>
+					</Button>
 					<form
 						action="?/bulkDelete"
 						method="POST"
@@ -79,21 +81,15 @@
 						}}
 					>
 						<input type="hidden" name="ids" value={selectedIds.join(',')} />
-						<AlertDialog.Action>
-							<Button
-								type="submit"
-								disabled={isDeleting}
-								class="bg-rose-600 text-white hover:bg-rose-500"
-							>
-								{#if isDeleting}
-									<IconLoader class="mr-2 h-4 w-4 animate-spin" />
-								{/if}
-								Delete {selectedIds.length} Items
-							</Button>
-						</AlertDialog.Action>
+						<Button variant="destructive" type="submit" disabled={isDeleting}>
+							{#if isDeleting}
+								<IconLoader class="mr-2 h-4 w-4 animate-spin" />
+							{/if}
+							Delete {selectedIds.length} Items
+						</Button>
 					</form>
-				</AlertDialog.Footer>
-			</AlertDialog.Content>
-		</AlertDialog.Root>
+				</Dialog.Footer>
+			</Dialog.Content>
+		</Dialog.Root>
 	</div>
 {/if}

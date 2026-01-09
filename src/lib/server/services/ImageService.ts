@@ -29,13 +29,66 @@ export class ImageService {
 
 	@LogExecution
 	async process(input: IProcessImageInput): Promise<IProcessImageOutput> {
-		const buffer = await input.file.arrayBuffer();
-		const originalSize = input.file.size;
+		let currentBuffer: Buffer | ArrayBuffer = await input.file.arrayBuffer();
+		if (!Buffer.isBuffer(currentBuffer)) {
+			currentBuffer = Buffer.from(new Uint8Array(currentBuffer));
+		}
 
-		let imagePipeline = sharp(buffer);
+		const originalSize = input.file.size;
+		const quality = input.quality || 80;
 		let outputFormat = input.targetFormat || ImageFormat.JPEG;
 
-		if (input.type === ProcessType.COMPRESS) {
+		if (input.type === ProcessType.REMOVE_BG) {
+			try {
+				const blob = new Blob([new Uint8Array(currentBuffer)], { type: input.file.type });
+				currentBuffer = await this.removeBackgroundFunc(blob);
+				outputFormat = ImageFormat.PNG;
+			} catch (e) {
+				console.warn('API Remove BG Error', e);
+				throw new Error('Background removal service unavailable');
+			}
+		}
+
+		if (input.resize) {
+			const { width, height, fit } = input.resize;
+			if (width || height) {
+				currentBuffer = await sharp(currentBuffer)
+					.resize({
+						width: width || undefined,
+						height: height || undefined,
+						fit: fit || 'inside',
+						withoutEnlargement: true
+					})
+					.toBuffer();
+			}
+		}
+
+		if (input.watermark?.file) {
+			const mainImageMetadata = await sharp(currentBuffer).metadata();
+			const mainWidth = mainImageMetadata.width || 1000;
+
+			const watermarkBuffer = Buffer.from(new Uint8Array(await input.watermark.file.arrayBuffer()));
+
+			const targetWatermarkWidth = Math.max(Math.round(mainWidth * 0.2), 50); // Min 50px
+
+			const resizedWatermark = await sharp(watermarkBuffer)
+				.resize({ width: targetWatermarkWidth })
+				.toBuffer();
+
+			currentBuffer = await sharp(currentBuffer)
+				.composite([
+					{
+						input: resizedWatermark,
+						gravity: input.watermark.position || 'southeast',
+						blend: 'over'
+					}
+				])
+				.toBuffer();
+		}
+
+		let imagePipeline = sharp(currentBuffer);
+
+		if (input.type === ProcessType.COMPRESS && !input.targetFormat) {
 			const metadata = await imagePipeline.metadata();
 			outputFormat = (metadata.format as ImageFormat) || ImageFormat.JPG;
 		}
@@ -43,19 +96,23 @@ export class ImageService {
 		switch (outputFormat) {
 			case ImageFormat.JPG:
 			case 'jpeg':
-				imagePipeline = imagePipeline.jpeg({ quality: 60, mozjpeg: true });
+				imagePipeline = imagePipeline.jpeg({ quality });
 				break;
 			case ImageFormat.PNG:
 				imagePipeline = imagePipeline.png({ compressionLevel: 8, palette: true });
 				break;
 			case ImageFormat.WEBP:
-				imagePipeline = imagePipeline.webp({ quality: 60 });
+				imagePipeline = imagePipeline.webp({ quality });
+				break;
+			case ImageFormat.AVIF:
+				imagePipeline = imagePipeline.avif({ quality });
 				break;
 		}
 
 		const resultBuffer = await imagePipeline.toBuffer();
 		const timestamp = Date.now();
-		const fileName = `users/${input.userId}/${timestamp}.${outputFormat}`;
+		const uniqueSuffix = Math.random().toString(36).substring(7);
+		const fileName = `users/${input.userId}/${timestamp}-${uniqueSuffix}.${outputFormat}`;
 
 		await this.s3.send(
 			new PutObjectCommand({
@@ -91,5 +148,25 @@ export class ImageService {
 		return await getSignedUrl(this.s3, command, {
 			expiresIn: 60 * 60 // 1 hour
 		});
+	}
+
+	private async removeBackgroundFunc(input: ArrayBuffer | Buffer | Blob): Promise<Buffer> {
+		const { removeBackground } = await import('@imgly/background-removal-node');
+
+		let processInput: Blob | Buffer;
+
+		if (input instanceof Blob) {
+			processInput = input;
+		} else if (Buffer.isBuffer(input)) {
+			processInput = input;
+		} else {
+			processInput = Buffer.from(new Uint8Array(input as ArrayBuffer));
+		}
+
+		console.log('Processing background removal with input type:', input.constructor.name);
+
+		const blob = await removeBackground(processInput);
+
+		return Buffer.from(await blob.arrayBuffer());
 	}
 }

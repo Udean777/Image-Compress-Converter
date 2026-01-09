@@ -162,7 +162,7 @@
 				<!-- Container that acts as the "Crop Frame" -->
 				<div
 					bind:this={containerElement}
-					class="relative z-10 h-48 w-48 overflow-hidden rounded-full shadow-xl ring-4 ring-border/50"
+					class="relative z-10 h-64 w-64 overflow-hidden rounded-full shadow-xl ring-4 ring-border/50"
 				>
 					<!-- Draggable Image -->
 					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -170,7 +170,7 @@
 						bind:this={imgElement}
 						src={imageSrc}
 						alt="Crop preview"
-						class="max-w-none origin-center cursor-move touch-none"
+						class="h-full w-auto max-w-none origin-center cursor-move touch-none"
 						style="transform: translate({imagePos.x}px, {imagePos.y}px) scale({zoom});"
 						onmousedown={handleMouseDown}
 						ontouchstart={handleMouseDown}
@@ -184,7 +184,7 @@
 				</div>
 
 				<!-- Visual Overlay for context -->
-				<div class="pointer-events-none absolute inset-0 z-0 bg-background/50"></div>
+				<div class="pointer-events-none absolute inset-0 z-0 bg-background/10"></div>
 			{/if}
 		</div>
 

@@ -9,7 +9,7 @@
 	} from '$lib/components/ui/table';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { IconImage, IconDownload, IconTrash, IconLoader } from '$lib/components/icons';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
 
@@ -52,6 +52,11 @@
 			minute: '2-digit'
 		});
 	}
+
+	function getFileName(path: string | undefined): string {
+		if (!path) return 'Image';
+		return path.split('/').pop() || path;
+	}
 </script>
 
 <div class="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -90,7 +95,7 @@
 								<IconImage class="h-5 w-5 text-muted-foreground" />
 							</div>
 							<span class="max-w-50 truncate text-sm font-medium text-foreground">
-								{item.fileName || 'Image'}
+								{getFileName(item.fileName)}
 							</span>
 						</div>
 					</TableCell>
@@ -116,7 +121,7 @@
 								<IconDownload class="h-4 w-4" />
 							</a>
 
-							<AlertDialog.Root
+							<Dialog.Root
 								open={showSingleDeleteDialog && itemToDelete === item.id}
 								onOpenChange={(open) => {
 									if (!open) {
@@ -125,7 +130,7 @@
 									}
 								}}
 							>
-								<AlertDialog.Trigger>
+								<Dialog.Trigger>
 									<button
 										onclick={() => {
 											itemToDelete = item.id;
@@ -136,22 +141,27 @@
 									>
 										<IconTrash class="h-4 w-4" />
 									</button>
-								</AlertDialog.Trigger>
-								<AlertDialog.Content class="border-border bg-background text-foreground">
-									<AlertDialog.Header>
-										<AlertDialog.Title>Delete this item?</AlertDialog.Title>
-										<AlertDialog.Description class="text-muted-foreground">
+								</Dialog.Trigger>
+								<Dialog.Content class="border-border bg-background text-foreground">
+									<Dialog.Header>
+										<Dialog.Title>Delete this item?</Dialog.Title>
+										<Dialog.Description class="text-muted-foreground">
 											Are you sure you want to delete <span class="font-medium text-foreground"
-												>{item.fileName || 'this image'}</span
+												>{getFileName(item.fileName)}</span
 											>? This action cannot be undone.
-										</AlertDialog.Description>
-									</AlertDialog.Header>
-									<AlertDialog.Footer>
-										<AlertDialog.Cancel
+										</Dialog.Description>
+									</Dialog.Header>
+									<Dialog.Footer>
+										<Button
+											variant="secondary"
+											onclick={() => {
+												showSingleDeleteDialog = false;
+												itemToDelete = null;
+											}}
 											class="border-border bg-secondary text-secondary-foreground hover:bg-secondary/80"
 										>
 											Cancel
-										</AlertDialog.Cancel>
+										</Button>
 										<form
 											action="?/delete"
 											method="POST"
@@ -167,22 +177,21 @@
 											}}
 										>
 											<input type="hidden" name="id" value={item.id} />
-											<AlertDialog.Action>
-												<Button
-													type="submit"
-													disabled={isDeleting}
-													class="bg-rose-600 text-white hover:bg-rose-500"
-												>
-													{#if isDeleting}
-														<IconLoader class="mr-2 h-4 w-4 animate-spin" />
-													{/if}
-													Delete Item
-												</Button>
-											</AlertDialog.Action>
+											<Button
+												variant="destructive"
+												type="submit"
+												disabled={isDeleting}
+												class="w-full"
+											>
+												{#if isDeleting}
+													<IconLoader class="mr-2 h-4 w-4 animate-spin" />
+												{/if}
+												Delete Item
+											</Button>
 										</form>
-									</AlertDialog.Footer>
-								</AlertDialog.Content>
-							</AlertDialog.Root>
+									</Dialog.Footer>
+								</Dialog.Content>
+							</Dialog.Root>
 						</div>
 					</TableCell>
 				</TableRow>
