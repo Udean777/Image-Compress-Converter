@@ -115,12 +115,17 @@
 			action="/dashboard?/process"
 			enctype="multipart/form-data"
 			class="space-y-6"
-			use:enhance={({ cancel }) => {
+			use:enhance={({ cancel, formData }) => {
 				if (user.credits <= 0) {
 					cancel();
 					showUpgradeModal = true;
 					return;
 				}
+
+				formData.delete('image');
+				files.forEach((f) => {
+					formData.append('image', f.file);
+				});
 
 				loading = true;
 				onSubmitStart?.();
