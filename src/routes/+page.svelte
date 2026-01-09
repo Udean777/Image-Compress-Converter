@@ -2,9 +2,11 @@
 	import { Button } from '$lib/components/ui/button';
 	import type { PageProps } from './$types';
 	import ModeToggle from '$lib/components/mode-toggle.svelte';
+	import PricingSection from '$lib/components/PricingSection.svelte';
 
 	let { data }: PageProps = $props();
 	const user = $derived(data.user);
+	const plans = $derived(data.plans || []);
 </script>
 
 <div class="min-h-screen bg-background">
@@ -208,6 +210,8 @@
 			</div>
 		</div>
 	</section>
+
+	<PricingSection {plans} />
 
 	<section class="container mx-auto px-6 py-24">
 		<div class="relative overflow-hidden rounded-3xl bg-primary p-12 text-center md:p-16">

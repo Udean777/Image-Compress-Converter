@@ -27,7 +27,7 @@
 	</header>
 
 	<div class="relative grid w-full gap-4 sm:gap-6 xl:grid-cols-2">
-		<ImageUploadForm onSuccess={handleSuccess} />
+		<ImageUploadForm onSuccess={handleSuccess} user={data.user} />
 
 		<div class="w-full min-w-0 space-y-6 overflow-x-hidden">
 			{#if showSuccessResult && form?.results}

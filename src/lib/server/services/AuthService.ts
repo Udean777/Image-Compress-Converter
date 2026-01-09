@@ -41,7 +41,7 @@ export class AuthService {
 			data: {
 				email: input.email,
 				password: hashedPassword,
-				credits: 10
+				credits: 15
 			}
 		});
 

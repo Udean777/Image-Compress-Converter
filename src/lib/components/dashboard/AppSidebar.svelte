@@ -8,13 +8,15 @@
 		IconImage
 	} from '$lib/components/icons';
 	import { page } from '$app/stores';
+	import SubscriptionWidget from './SubscriptionWidget.svelte';
 
-	let { credits }: { credits: number } = $props();
+	let { user }: { user: any } = $props();
 
 	const navItems = [
 		{ href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
 		{ href: '/dashboard/history', label: 'History', icon: IconHistory },
-		{ href: '/dashboard/settings', label: 'Settings', icon: IconSettings }
+		{ href: '/dashboard/settings', label: 'Settings', icon: IconSettings },
+		{ href: '/dashboard/upgrade', label: 'Upgrade', icon: IconStar }
 	];
 </script>
 
@@ -64,16 +66,7 @@
 
 	<Sidebar.Footer>
 		<Sidebar.Menu>
-			<Sidebar.MenuItem>
-				<div
-					class="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-amber-600 transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 dark:text-amber-400"
-				>
-					<IconStar class="size-4 shrink-0" />
-					<span class="text-sm font-medium group-data-[collapsible=icon]:hidden">
-						{credits} Credits
-					</span>
-				</div>
-			</Sidebar.MenuItem>
+			<SubscriptionWidget {user} />
 		</Sidebar.Menu>
 	</Sidebar.Footer>
 	<Sidebar.Rail />

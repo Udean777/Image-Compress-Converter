@@ -17,17 +17,20 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import * as Select from '$lib/components/ui/select';
 	import { formatBytes } from '$lib/format';
+	import UpgradePromptModal from './UpgradePromptModal.svelte';
 
 	interface Props {
+		user: any;
 		onSubmitStart?: () => void;
 		onSubmitEnd?: () => void;
 		onSuccess?: (files: File[]) => void;
 	}
 
-	let { onSubmitStart, onSubmitEnd, onSuccess }: Props = $props();
+	let { user, onSubmitStart, onSubmitEnd, onSuccess }: Props = $props();
 
 	let loading = $state(false);
 	let dragOver = $state(false);
+	let showUpgradeModal = $state(false);
 
 	interface FilePreview {
 		file: File;
@@ -112,7 +115,13 @@
 			action="/dashboard?/process"
 			enctype="multipart/form-data"
 			class="space-y-6"
-			use:enhance={() => {
+			use:enhance={({ cancel }) => {
+				if (user.credits <= 0) {
+					cancel();
+					showUpgradeModal = true;
+					return;
+				}
+
 				loading = true;
 				onSubmitStart?.();
 				return async ({ update, result }) => {
@@ -323,15 +332,21 @@
 								class="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
 							>
 								<IconEye class="h-3 w-3" /> Watermark
+								{#if user.tier === 'free'}
+									<span
+										class="ml-auto rounded bg-primary/10 px-1.5 py-0.5 text-[10px] tracking-normal text-primary normal-case"
+										>PRO Only</span
+									>
+								{/if}
 							</h4>
-
-							<div class="space-y-2">
+							<div class="space-y-2 {user.tier === 'free' ? 'pointer-events-none opacity-50' : ''}">
 								<Label class="text-xs" for="watermark">Upload Logo</Label>
 								<Input
 									type="file"
 									name="watermark"
 									id="watermark"
 									accept="image/png"
+									disabled={user.tier === 'free'}
 									class="cursor-pointer file:text-primary"
 								/>
 							</div>
@@ -384,5 +399,7 @@
 				{/if}
 			</Button>
 		</form>
+
+		<UpgradePromptModal bind:open={showUpgradeModal} />
 	</div>
 </div>

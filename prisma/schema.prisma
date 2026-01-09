@@ -18,11 +18,14 @@ model User {
   name      String?
   avatarUrl String?
   password  String
-  credits   Int      @default(10)
+  credits   Int      @default(20)
   createdAt DateTime @default(now())
 
-  sessions  Session[]
-  histories History[]
+  sessions           Session[]
+  histories          History[]
+  subscriptions      Subscription[]
+  payments           Payment[]
+  creditTransactions CreditTransaction[]
 }
 
 model Session {
@@ -43,4 +46,70 @@ model History {
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PricingPlan {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  displayName   String
+  price         Int
+  currency      String         @default("IDR")
+  interval      String         @default("month")
+  credits       Int
+  features      Json?
+  isActive      Boolean        @default(true)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String      @id @default(uuid())
+  userId             String
+  planId             String
+  status             String      @default("active")
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  creditsRemaining   Int         @default(0)
+  cancelledAt        DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               PricingPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id               String    @id @default(uuid())
+  userId           String
+  subscriptionId   String?
+  amount           Int
+  currency         String    @default("IDR")
+  status           String
+  paymentType      String?
+  midtransOrderId  String    @unique
+  midtransTransId  String?   @unique
+  midtransResponse Json?
+  createdAt        DateTime  @default(now())
+  paidAt           DateTime?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([midtransOrderId])
+}
+
+model CreditTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int
+  type        String
+  description String?
+  referenceId String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
 }

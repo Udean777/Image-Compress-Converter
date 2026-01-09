@@ -16,7 +16,7 @@
 </script>
 
 <Sidebar.Provider>
-	<AppSidebar credits={data.user.credits} />
+	<AppSidebar user={data.user} />
 	<Sidebar.Inset>
 		<Header user={data.user}>
 			<button type="button" onclick={() => (showLogoutDialog = true)} class="w-full text-left">
