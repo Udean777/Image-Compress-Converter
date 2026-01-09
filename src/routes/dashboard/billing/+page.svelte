@@ -114,52 +114,108 @@
 		</div>
 	</div>
 
-	<!-- History Table -->
-	<div class="overflow-hidden rounded-2xl border bg-card">
-		<div class="border-b p-6">
-			<h3 class="flex items-center gap-2 font-semibold">
-				<Receipt class="h-4 w-4 text-primary" /> Riwayat Pembayaran
-			</h3>
-		</div>
-		<div class="overflow-x-auto">
-			<table class="w-full text-left text-sm">
-				<thead class="bg-muted/50 text-muted-foreground">
-					<tr>
-						<th class="p-4 font-medium">Tanggal</th>
-						<th class="p-4 font-medium">Order ID</th>
-						<th class="p-4 font-medium">Jumlah</th>
-						<th class="p-4 font-medium">Status</th>
-						<th class="p-4 text-right font-medium">Aksi</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y">
-					{#each payments as payment}
-						<tr class="hover:bg-muted/30">
-							<td class="p-4">{formatDate(payment.createdAt)}</td>
-							<td class="p-4 font-mono text-xs">{payment.midtransOrderId}</td>
-							<td class="p-4">{formatPrice(payment.amount)}</td>
-							<td class="p-4">
-								<Badge
-									variant={payment.status === 'paid' ? 'default' : 'secondary'}
-									class="text-[10px] uppercase"
-								>
-									{payment.status}
-								</Badge>
-							</td>
-							<td class="p-4 text-right">
-								<Button variant="ghost" size="sm" href="/api/stripe/portal">Detail</Button>
-							</td>
-						</tr>
-					{/each}
-					{#if payments.length === 0}
+	<!-- Grid for History Tables -->
+	<div class="grid gap-8 lg:grid-cols-2">
+		<!-- Payment History -->
+		<div class="overflow-hidden rounded-2xl border bg-card">
+			<div class="border-b p-6">
+				<h3 class="flex items-center gap-2 font-semibold">
+					<Receipt class="h-4 w-4 text-primary" /> Riwayat Pembayaran
+				</h3>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="w-full text-left text-sm">
+					<thead class="bg-muted/50 text-muted-foreground">
 						<tr>
-							<td colspan="5" class="p-8 text-center text-muted-foreground">
-								Belum ada riwayat transaksi.
-							</td>
+							<th class="p-4 font-medium">Tanggal</th>
+							<th class="p-4 font-medium">Jumlah</th>
+							<th class="p-4 font-medium">Status</th>
+							<th class="p-4 text-right font-medium">Aksi</th>
 						</tr>
-					{/if}
-				</tbody>
-			</table>
+					</thead>
+					<tbody class="divide-y">
+						{#each payments as payment}
+							<tr class="hover:bg-muted/30">
+								<td class="p-4 font-medium">{formatDate(payment.createdAt)}</td>
+								<td class="p-4">{formatPrice(payment.amount)}</td>
+								<td class="p-4">
+									<Badge
+										variant={payment.status === 'paid' ? 'default' : 'secondary'}
+										class="text-[10px] font-bold uppercase"
+									>
+										{payment.status}
+									</Badge>
+								</td>
+								<td class="p-4 text-right">
+									<Button variant="ghost" size="sm" href="/api/stripe/portal">Detail</Button>
+								</td>
+							</tr>
+						{/each}
+						{#if payments.length === 0}
+							<tr>
+								<td colspan="4" class="p-8 text-center text-muted-foreground">
+									Belum ada riwayat transaksi.
+								</td>
+							</tr>
+						{/if}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Credit History -->
+		<div class="overflow-hidden rounded-2xl border bg-card">
+			<div class="border-b p-6">
+				<h3 class="flex items-center gap-2 font-semibold">
+					<Zap class="h-4 w-4 text-primary" /> Riwayat Kredit
+				</h3>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="w-full text-left text-sm">
+					<thead class="bg-muted/50 text-muted-foreground">
+						<tr>
+							<th class="p-4 font-medium">Tanggal</th>
+							<th class="p-4 font-medium">Aktivitas</th>
+							<th class="p-4 text-right font-medium">Jumlah</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y">
+						{#each data.creditTransactions || [] as tx}
+							<tr class="hover:bg-muted/30">
+								<td class="p-4 text-muted-foreground">{formatDate(tx.createdAt)}</td>
+								<td class="p-4">
+									<p class="font-medium">
+										{#if tx.type === 'subscription_renew'}
+											Langganan
+										{:else if tx.type === 'usage'}
+											Pemakaian
+										{:else if tx.type === 'expired'}
+											Kadaluarsa
+										{:else}
+											{tx.type}
+										{/if}
+									</p>
+									<p class="max-w-37.5 truncate text-xs text-muted-foreground italic">
+										{tx.description}
+									</p>
+								</td>
+								<td class="p-4 text-right font-bold">
+									<span class={tx.amount > 0 ? 'text-green-500' : 'text-foreground'}>
+										{tx.amount > 0 ? '+' : ''}{tx.amount}
+									</span>
+								</td>
+							</tr>
+						{/each}
+						{#if !data.creditTransactions || data.creditTransactions.length === 0}
+							<tr>
+								<td colspan="3" class="p-8 text-center text-muted-foreground">
+									Belum ada riwayat kredit.
+								</td>
+							</tr>
+						{/if}
+					</tbody>
+				</table>
+			</div>
 		</div>
 	</div>
 </div>

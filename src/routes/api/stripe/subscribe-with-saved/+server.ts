@@ -129,7 +129,10 @@ export const POST = async ({ request, locals }) => {
 			clientSecret
 		});
 	} catch (err: any) {
+		if (err instanceof Stripe.errors.StripeCardError) {
+			return json({ error: err.message }, { status: 400 });
+		}
 		console.error('Subscription error:', err);
-		return json({ error: err.message }, { status: 500 });
+		return json({ error: err.message || 'Internal server error' }, { status: 500 });
 	}
 };
