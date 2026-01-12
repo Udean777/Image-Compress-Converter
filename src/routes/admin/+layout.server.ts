@@ -23,6 +23,10 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	]);
 
 	if (!user) throw redirect(303, '/');
+
+	// Ensure admin only access (redundant check but safe)
+	if (user.role !== 'ADMIN') throw redirect(303, '/dashboard');
+
 	return {
 		user: {
 			...user,

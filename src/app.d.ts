@@ -8,6 +8,7 @@ declare global {
 				credits: number;
 				name: string | null;
 				avatarUrl: string | null;
+				role: string;
 			} | null;
 			session: {
 				id: string;

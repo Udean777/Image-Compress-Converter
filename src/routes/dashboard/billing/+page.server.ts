@@ -2,8 +2,9 @@ import { prisma } from '$lib/server/db';
 import { redirect } from '@sveltejs/kit';
 import { subscriptionService } from '$lib/server/services/SubscriptionService';
 import { creditService } from '$lib/server/services/CreditService';
+import type { Actions, PageServerLoad } from './$types.js';
 
-export const load = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(303, '/login');
 
@@ -19,11 +20,15 @@ export const load = async ({ locals }) => {
 	return {
 		activeSubscription,
 		payments,
-		creditTransactions
+		creditTransactions,
+		user: {
+			name: user.name,
+			email: user.email
+		}
 	};
 };
 
-export const actions = {
+export const actions: Actions = {
 	cancel: async ({ locals }) => {
 		const user = locals.user;
 		if (!user) throw redirect(303, '/login');

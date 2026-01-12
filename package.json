@@ -19,7 +19,7 @@
 		"docker:logs": "docker-compose logs -f",
 		"docker:build": "docker-compose up -d --build",
 		"docker:clean": "docker-compose down -v",
-		"db:seed": "bunx tsx prisma/seed/seed-pricing.ts"
+		"db:seed": "bunx tsx prisma/seed/seed-pricing.ts && bunx tsx prisma/seed/seed-admin.ts"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.10.0",

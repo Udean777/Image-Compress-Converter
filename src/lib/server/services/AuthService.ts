@@ -35,7 +35,7 @@ export class AuthService {
 			throw new Error(AuthError.EMAIL_EXISTS);
 		}
 
-		const hashedPassword = await Bun.password.hash(input.password);
+		const hashedPassword = await bcrypt.hash(input.password, 10);
 
 		const newUser = await this.db.user.create({
 			data: {
@@ -62,7 +62,7 @@ export class AuthService {
 			throw new Error(AuthError.INVALID_CREDENTIALS);
 		}
 
-		let isValid = await Bun.password.verify(input.password, user.password);
+		let isValid = await bcrypt.compare(input.password, user.password);
 
 		// Fallback for legacy bcryptjs hashes
 		if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {

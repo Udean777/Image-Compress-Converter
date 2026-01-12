@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { IconUser, IconMoon, IconSun } from '$lib/components/icons';
-	import * as Avatar from '$lib/components/ui/avatar';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Button } from '$lib/components/ui/button';
 	import { mode, setMode } from 'mode-watcher';
 	import type { Snippet } from 'svelte';
 
@@ -11,10 +9,12 @@
 		name: string | null;
 		email: string;
 		avatarUrl: string | null;
+		role: string;
+		createdAt: Date;
 	}
 
 	interface Props {
-		user: User;
+		user: any;
 		children?: Snippet;
 	}
 

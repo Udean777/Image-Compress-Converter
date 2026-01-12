@@ -367,6 +367,29 @@ export class SubscriptionService {
 
 		return stripe.paymentMethods.detach(paymentMethodId);
 	}
+
+	async deleteStripeCustomer(userId: string) {
+		const { Stripe } = await import('stripe');
+		const { STRIPE_SECRET_KEY } = await import('$env/static/private');
+		const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+		// Get customer ID (reuse existing logic, but we might want to avoid creating if not exists,
+		// but given the user is being deleted, creating just to fail finding it is okay/idempotent enough)
+		// Better approach: Lookup user to get email, then list customers.
+		const user = await this.db.user.findUnique({ where: { id: userId } });
+		if (!user) return;
+
+		const customers = await stripe.customers.list({
+			email: user.email,
+			limit: 1
+		});
+
+		if (customers.data.length > 0) {
+			const customerId = customers.data[0].id;
+			await stripe.customers.del(customerId);
+			console.log(`✅ Deleted Stripe customer ${customerId} for user ${userId}`);
+		}
+	}
 }
 
 export const subscriptionService = new SubscriptionService();

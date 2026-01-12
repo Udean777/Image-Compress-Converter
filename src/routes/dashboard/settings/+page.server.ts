@@ -135,28 +135,14 @@ export const actions: Actions = {
 				return fail(404, { message: 'User not found' });
 			}
 
-			// 1. Try Bun.password.verify (Standard for Argon2/Bun bcrypt)
-			let isValid = await Bun.password.verify(currentPassword, user.password);
-			let needsMigration = false;
-
-			// 2. Fallback to bcryptjs (Support legacy hashes if Bun.password fails)
-			if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
-				isValid = await bcrypt.compare(currentPassword, user.password);
-				if (isValid) {
-					needsMigration = true;
-				}
-			}
+			// 1. Verify current password
+			let isValid = await bcrypt.compare(currentPassword, user.password);
 
 			if (!isValid) {
 				return fail(400, { message: 'Incorrect current password' });
 			}
 
-			// If we matched a legacy hash, migrate it before setting the new one
-			// Or just set the new one below anyway.
-			// But if the user somehow failed the new password update below,
-			// we at least migrated them.
-
-			const hashedPassword = await Bun.password.hash(newPassword);
+			const hashedPassword = await bcrypt.hash(newPassword, 10);
 
 			await db.user.update({
 				where: { id: locals.user.id },
@@ -192,15 +178,19 @@ export const actions: Actions = {
 			}
 
 			// Verify password
-			let isValid = await Bun.password.verify(password, user.password);
-
-			// Fallback to bcryptjs for legacy hashes
-			if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
-				isValid = await bcrypt.compare(password, user.password);
-			}
+			let isValid = await bcrypt.compare(password, user.password);
 
 			if (!isValid) {
 				return fail(400, { message: 'Incorrect password' });
+			}
+
+			// Delete Stripe Customer (this will delete cards and subscriptions)
+			try {
+				const { subscriptionService } = await import('$lib/server/services/SubscriptionService');
+				await subscriptionService.deleteStripeCustomer(locals.user.id);
+			} catch (err) {
+				console.error('Failed to delete Stripe customer:', err);
+				// Continue to delete local user even if Stripe fails
 			}
 
 			await db.user.delete({

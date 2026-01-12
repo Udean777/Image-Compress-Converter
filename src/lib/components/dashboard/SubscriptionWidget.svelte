@@ -11,14 +11,16 @@
 
 <div class="space-y-4 px-4 py-4">
 	<div class="rounded-xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm">
-		<div class="mb-3 flex items-center justify-between">
+		<div class="mb-3 flex flex-col items-start gap-2">
 			<div class="flex items-center gap-2">
 				<div class="rounded-lg bg-primary p-1.5 text-primary-foreground">
 					<Star class="size-3.5 fill-current" />
 				</div>
 				<span class="text-xs font-bold tracking-wider text-primary uppercase">{user.planName}</span>
 			</div>
-			<span class="text-xs font-medium text-muted-foreground">{user.credits} sisa</span>
+			<span class="truncate text-xs font-medium whitespace-break-spaces text-muted-foreground"
+				>{user.credits} Credit</span
+			>
 		</div>
 
 		<Progress value={creditPercentage} class="mb-4 h-1.5" />

@@ -20,6 +20,8 @@ model User {
   password  String
   credits   Int      @default(20)
   createdAt DateTime @default(now())
+  role      String   @default("USER")
+  isBanned  Boolean  @default(false)
 
   sessions           Session[]
   histories          History[]

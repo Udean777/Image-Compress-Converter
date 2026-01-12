@@ -3,6 +3,7 @@
 	import { ImageUploadForm, ProcessResult, HistoryList } from '$lib/components/dashboard';
 	import { IconError, IconDownload } from '$lib/components/icons';
 	import { Button } from '$lib/components/ui/button';
+	import { onDestroy } from 'svelte';
 
 	let { data, form }: PageProps = $props();
 
@@ -10,12 +11,10 @@
 	let originalObjectUrls = $state<string[]>([]);
 
 	function handleSuccess(files: File[]) {
-		// Clean up previous URLs
 		originalObjectUrls.forEach((url) => URL.revokeObjectURL(url));
 		originalObjectUrls = files.map((file) => URL.createObjectURL(file));
 	}
 
-	import { onDestroy } from 'svelte';
 	onDestroy(() => {
 		originalObjectUrls.forEach((url) => URL.revokeObjectURL(url));
 	});

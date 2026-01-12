@@ -36,7 +36,6 @@
 		</p>
 	</div>
 
-	<!-- Current Plan Section -->
 	<div class="grid gap-6 md:grid-cols-2">
 		<div class="rounded-2xl border bg-card p-6">
 			<h3 class="mb-4 flex items-center gap-2 font-semibold">
@@ -114,9 +113,7 @@
 		</div>
 	</div>
 
-	<!-- Grid for History Tables -->
 	<div class="grid gap-8 lg:grid-cols-2">
-		<!-- Payment History -->
 		<div class="overflow-hidden rounded-2xl border bg-card">
 			<div class="border-b p-6">
 				<h3 class="flex items-center gap-2 font-semibold">
@@ -147,7 +144,9 @@
 									</Badge>
 								</td>
 								<td class="p-4 text-right">
-									<Button variant="ghost" size="sm" href="/api/stripe/portal">Detail</Button>
+									<Button variant="ghost" size="sm" href="/dashboard/billing/invoice/{payment.id}"
+										>Detail</Button
+									>
 								</td>
 							</tr>
 						{/each}
@@ -163,7 +162,6 @@
 			</div>
 		</div>
 
-		<!-- Credit History -->
 		<div class="overflow-hidden rounded-2xl border bg-card">
 			<div class="border-b p-6">
 				<h3 class="flex items-center gap-2 font-semibold">

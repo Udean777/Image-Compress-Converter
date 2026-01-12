@@ -38,7 +38,9 @@
 					/>
 
 					<div class="mt-2 flex items-center justify-between px-1">
-						<Badge variant="outline" class="font-mono text-[10px] uppercase">{item.format}</Badge>
+						<Badge variant="outline" class="font-mono text-[10px] uppercase"
+							>{item.outputFormat}</Badge
+						>
 						<Button size="icon" variant="ghost" class="h-8 w-8" href={item.outputUrl} download>
 							<Download class="h-4 w-4" />
 						</Button>

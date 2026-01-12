@@ -6,7 +6,8 @@
 		IconSettings,
 		IconStar,
 		IconImage,
-		IconBilling
+		IconBilling,
+		IconUser
 	} from '$lib/components/icons';
 	import { page } from '$app/stores';
 	import SubscriptionWidget from './SubscriptionWidget.svelte';
@@ -15,7 +16,8 @@
 
 	const platformNav = [
 		{ href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
-		{ href: '/dashboard/history', label: 'History', icon: IconHistory }
+		{ href: '/dashboard/history', label: 'History', icon: IconHistory },
+		{ href: '/dashboard/gallery', label: 'Gallery', icon: IconImage }
 	];
 
 	const billingNav = [
@@ -24,6 +26,8 @@
 	];
 
 	const settingsNav = [{ href: '/dashboard/settings', label: 'Settings', icon: IconSettings }];
+
+	const adminNav = [{ href: '/admin/users', label: 'Users Management', icon: IconUser }];
 </script>
 
 <Sidebar.Root collapsible="icon">
@@ -88,6 +92,29 @@
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
+
+		{#if user?.role === 'ADMIN'}
+			<Sidebar.Group>
+				<Sidebar.GroupLabel>Admin</Sidebar.GroupLabel>
+				<Sidebar.GroupContent>
+					<Sidebar.Menu>
+						{#each adminNav as item}
+							{@const isActive = $page.url.pathname.startsWith(item.href)}
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton {isActive}>
+									{#snippet child({ props })}
+										<a href={item.href} {...props}>
+											<item.icon />
+											<span>{item.label}</span>
+										</a>
+									{/snippet}
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						{/each}
+					</Sidebar.Menu>
+				</Sidebar.GroupContent>
+			</Sidebar.Group>
+		{/if}
 
 		<Sidebar.Group>
 			<Sidebar.GroupLabel>Account</Sidebar.GroupLabel>

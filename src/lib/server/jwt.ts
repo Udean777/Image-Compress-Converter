@@ -5,11 +5,17 @@ const JWT_SECRET = new TextEncoder().encode(
 	env.JWT_SECRET || 'fallback_secret_change_me_in_production'
 );
 
-export async function createAccessToken(user: { id: string; email: string; name: string | null }) {
+export async function createAccessToken(user: {
+	id: string;
+	email: string;
+	name: string | null;
+	role: string;
+}) {
 	return await new SignJWT({
 		id: user.id,
 		email: user.email,
-		name: user.name
+		name: user.name,
+		role: user.role
 	})
 		.setProtectedHeader({ alg: 'HS256' })
 		.setIssuedAt()

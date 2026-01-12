@@ -9,22 +9,24 @@ import {
 } from '../../types/image.types';
 import { LogExecution } from '../decorators';
 
+import { env } from '$env/dynamic/private';
+
 export class ImageService {
 	private s3: S3Client;
 	private bucket: string;
 
 	constructor() {
 		this.s3 = new S3Client({
-			region: process.env.S3_REGION || 'us-east-1',
-			endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+			region: env.S3_REGION || 'us-east-1',
+			endpoint: env.S3_ENDPOINT || 'http://localhost:9000',
 			credentials: {
-				accessKeyId: process.env.S3_ACCESS_KEY || 'miniouser',
-				secretAccessKey: process.env.S3_SECRET_KEY || 'miniopassword'
+				accessKeyId: env.S3_ACCESS_KEY,
+				secretAccessKey: env.S3_SECRET_KEY
 			},
 			forcePathStyle: true
 		});
 
-		this.bucket = process.env.S3_BUCKET || 'saas-bucket';
+		this.bucket = env.S3_BUCKET;
 	}
 
 	@LogExecution

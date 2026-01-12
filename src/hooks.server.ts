@@ -1,4 +1,4 @@
-import type { Handle } from '@sveltejs/kit';
+import { redirect, type Handle } from '@sveltejs/kit';
 import { prisma } from '$lib/server/db';
 import { ensurePublicBucket } from '$lib/server/s3';
 import { verifyToken, createAccessToken } from '$lib/server/jwt';
@@ -19,7 +19,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 		if (session && Date.now() < session.expiresAt.getTime()) {
 			const user = session.user;
-			userPayload = { id: user.id, email: user.email, name: user.name };
+			userPayload = { id: user.id, email: user.email, name: user.name, role: user.role };
 
 			const newAccessToken = await createAccessToken(user);
 			event.cookies.set('access_token', newAccessToken, {
@@ -42,10 +42,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 			email: userPayload.email as string,
 			name: userPayload.name as string | null,
 			credits: 0,
-			avatarUrl: null
+			avatarUrl: null,
+			role: (userPayload.role as string) || 'USER'
 		};
 	} else {
 		event.locals.user = null;
+	}
+
+	if (event.url.pathname.startsWith('/admin')) {
+		if (!event.locals.user) {
+			throw redirect(303, '/');
+		}
+
+		console.log(event.locals.user.role);
+		if (event.locals.user.role !== 'ADMIN') {
+			throw redirect(303, '/dashboard');
+		}
 	}
 
 	if (event.url.pathname.startsWith('/dashboard') && !event.locals.user) {
