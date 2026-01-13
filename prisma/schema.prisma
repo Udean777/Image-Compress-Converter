@@ -38,16 +38,24 @@ model Session {
 }
 
 model History {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   userId       String
   fileName     String
   action       String
   outputFormat String
   creditsUsed  Int
   outputUrl    String
-  createdAt    DateTime @default(now())
+  isPermanent  Boolean   @default(false)
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemConfig {
+  id    String @id @default("global")
+  key   String @unique
+  value String
 }
 
 model PricingPlan {
@@ -114,4 +122,15 @@ model CreditTransaction {
 
   @@index([userId])
   @@index([type])
+}
+
+model Announcement {
+  id        String    @id @default(uuid())
+  title     String
+  content   String
+  type      String    @default("info") // info, warning, success
+  isActive  Boolean   @default(true)
+  target    String    @default("all") // all, free, pro, etc.
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
 }

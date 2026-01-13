@@ -10,7 +10,8 @@ export enum ImageFormat {
 export enum ProcessType {
 	COMPRESS = 'compress',
 	CONVERT = 'convert',
-	REMOVE_BG = 'remove_bg'
+	REMOVE_BG = 'remove_bg',
+	WATERMARK = 'watermark'
 }
 
 // [NEW] Interface untuk opsi Resize
@@ -23,7 +24,9 @@ export interface IResizeOptions {
 // [NEW] Interface untuk opsi Watermark
 export interface IWatermarkOptions {
 	file?: File;
-	text?: string; // Opsional: Text watermark (nanti bisa diexpand)
+	text?: string;
+	textColor?: string;
+	textSize?: number;
 	opacity?: number;
 	position?:
 		| 'north'
@@ -46,6 +49,7 @@ export interface IProcessImageInput {
 	// [NEW] Tambahan opsi manipulasi
 	resize?: IResizeOptions;
 	watermark?: IWatermarkOptions;
+	stripMetadata?: boolean;
 }
 
 export interface IProcessImageOutput {

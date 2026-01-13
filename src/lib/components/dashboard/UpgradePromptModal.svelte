@@ -3,7 +3,11 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Zap, AlertCircle } from '@lucide/svelte';
 
-	let { open = $bindable(false) } = $props();
+	let {
+		open = $bindable(false),
+		title = 'Credit Habis!',
+		description = 'Anda telah menggunakan semua credit gratis Anda. Upgrade ke paket Pro untuk terus menggunakan fitur premium tanpa batas.'
+	} = $props();
 </script>
 
 <Dialog.Root bind:open>
@@ -15,10 +19,9 @@
 				<AlertCircle class="h-10 w-10 text-amber-600 dark:text-amber-400" />
 			</div>
 			<Dialog.Header>
-				<Dialog.Title class="text-2xl font-bold">Credit Habis!</Dialog.Title>
+				<Dialog.Title class="text-2xl font-bold">{title}</Dialog.Title>
 				<Dialog.Description class="pt-2 text-base">
-					Anda telah menggunakan semua credit gratis Anda. Upgrade ke paket Pro untuk terus
-					menggunakan fitur premium tanpa batas.
+					{description}
 				</Dialog.Description>
 			</Dialog.Header>
 		</div>

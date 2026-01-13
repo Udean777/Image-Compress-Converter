@@ -18,10 +18,10 @@ const pricingPlans = [
 		credits: 15,
 		sortOrder: 0,
 		features: JSON.stringify([
-			'Compress Images',
-			'Convert Formats',
-			'Resize Images',
-			'10 Credits (sekali)'
+			'🗜️ Compress & Convert',
+			'📏 Resize Images',
+			'📦 Max 5MB per File',
+			'🎁 15 Credits (sekali)'
 		])
 	},
 	{
@@ -32,7 +32,12 @@ const pricingPlans = [
 		interval: 'month',
 		credits: 100,
 		sortOrder: 1,
-		features: JSON.stringify(['All Free features', 'Priority Support', '100 Credits/bulan'])
+		features: JSON.stringify([
+			'All Free features',
+			'✨ Full Quality Export',
+			'🚀 Max 10MB per File',
+			'100 Credits/bulan'
+		])
 	},
 	{
 		name: 'pro',
@@ -44,8 +49,9 @@ const pricingPlans = [
 		sortOrder: 2,
 		features: JSON.stringify([
 			'All Starter features',
-			'Remove Background',
-			'Add Watermark',
+			'✂️ Remove Background',
+			'🖼️ Add Watermark',
+			'🏰 Max 25MB per File',
 			'300 Credits/bulan'
 		])
 	},
@@ -59,8 +65,9 @@ const pricingPlans = [
 		sortOrder: 3,
 		features: JSON.stringify([
 			'All Pro features',
-			'API Access',
-			'Batch Processing',
+			'🔌 API Access (Soon)',
+			'🔄 Batch Processing',
+			'🏢 Max 100MB per File',
 			'1000 Credits/bulan'
 		])
 	}

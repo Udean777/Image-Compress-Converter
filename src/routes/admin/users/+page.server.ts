@@ -51,5 +51,24 @@ export const actions = {
 		]);
 
 		return { success: true };
+	},
+	impersonate: async ({ request, cookies, locals }) => {
+		if (!locals.user || locals.user.role !== 'ADMIN') return fail(401);
+
+		const formData = await request.formData();
+		const userId = formData.get('userId') as string;
+
+		if (!userId) return fail(400, { message: 'User ID required' });
+
+		// Set impersonation cookie
+		cookies.set('impersonate_user_id', userId, {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: process.env.NODE_ENV === 'production',
+			maxAge: 60 * 60 // 1 hour
+		});
+
+		throw redirect(303, '/dashboard');
 	}
 };

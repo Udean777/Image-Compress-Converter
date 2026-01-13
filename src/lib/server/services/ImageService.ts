@@ -65,30 +65,61 @@ export class ImageService {
 			}
 		}
 
-		if (input.watermark?.file) {
+		if (input.watermark?.file || input.watermark?.text) {
 			const mainImageMetadata = await sharp(currentBuffer).metadata();
 			const mainWidth = mainImageMetadata.width || 1000;
+			const mainHeight = mainImageMetadata.height || 1000;
 
-			const watermarkBuffer = Buffer.from(new Uint8Array(await input.watermark.file.arrayBuffer()));
+			let watermarkOverlay: Buffer;
 
-			const targetWatermarkWidth = Math.max(Math.round(mainWidth * 0.2), 50); // Min 50px
+			if (input.watermark.file) {
+				const watermarkBuffer = Buffer.from(
+					new Uint8Array(await input.watermark.file.arrayBuffer())
+				);
+				const targetWatermarkWidth = Math.max(Math.round(mainWidth * 0.2), 50); // Min 50px
 
-			const resizedWatermark = await sharp(watermarkBuffer)
-				.resize({ width: targetWatermarkWidth })
-				.toBuffer();
+				watermarkOverlay = await sharp(watermarkBuffer)
+					.resize({ width: targetWatermarkWidth })
+					.toBuffer();
+			} else {
+				// Text Watermark
+				const text = input.watermark.text || '';
+				const color = input.watermark.textColor || 'white';
+				const size = input.watermark.textSize || Math.max(Math.round(mainWidth * 0.05), 20);
+				const opacity = input.watermark.opacity || 0.5;
 
-			currentBuffer = await sharp(currentBuffer)
-				.composite([
-					{
-						input: resizedWatermark,
-						gravity: input.watermark.position || 'southeast',
-						blend: 'over'
-					}
-				])
-				.toBuffer();
+				const svg = `
+					<svg width="${mainWidth}" height="${mainHeight}">
+						<style>
+							.title { fill: ${color}; font-size: ${size}px; font-weight: bold; opacity: ${opacity}; font-family: sans-serif; }
+						</style>
+						<text x="50%" y="50%" text-anchor="middle" class="title">${text}</text>
+					</svg>
+				`;
+				watermarkOverlay = Buffer.from(svg);
+			}
+
+			const compositeOptions: any = {
+				input: watermarkOverlay,
+				gravity: input.watermark.position || 'southeast',
+				blend: 'over'
+			};
+
+			// If it's a full-size SVG text overlay, we don't want gravity to move it if it's already centered in SVG
+			if (input.watermark.text && !input.watermark.file) {
+				compositeOptions.gravity = 'center';
+			}
+
+			currentBuffer = await sharp(currentBuffer).composite([compositeOptions]).toBuffer();
 		}
 
 		let imagePipeline = sharp(currentBuffer);
+
+		if (input.stripMetadata) {
+			// Do nothing, sharp strips by default unless .withMetadata() is called
+		} else {
+			imagePipeline = imagePipeline.withMetadata();
+		}
 
 		if (input.type === ProcessType.COMPRESS && !input.targetFormat) {
 			const metadata = await imagePipeline.metadata();

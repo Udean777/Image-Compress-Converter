@@ -13,7 +13,7 @@ export class AuthService {
 	private db: PrismaClient;
 
 	constructor(database: PrismaClient = prisma) {
-		this.db = prisma;
+		this.db = database;
 	}
 
 	@LogExecution

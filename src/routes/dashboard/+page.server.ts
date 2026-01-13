@@ -4,6 +4,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db';
 import { ProcessType, type ImageFormat } from '$lib/types/image.types';
+import { IMAGE_ACTIONS, isFeatureAllowed, TIER_LIMITS } from '$lib/constants';
 
 const imageService = new ImageService();
 const userService = new UserService();
@@ -44,11 +45,27 @@ export const actions: Actions = {
 		const files = formData.getAll('image') as File[];
 		const type = formData.get('action') as ProcessType;
 		const targetFormat = formData.get('format') as ImageFormat;
-		const quality = parseInt(formData.get('quality') as string) || 80;
+		let quality = parseInt(formData.get('quality') as string) || 80;
 		const width = formData.get('width') ? parseInt(formData.get('width') as string) : undefined;
 		const height = formData.get('height') ? parseInt(formData.get('height') as string) : undefined;
 		const watermarkFile = formData.get('watermark') as File;
+		const watermarkText = formData.get('watermarkText') as string;
 		const watermarkPosition = formData.get('watermarkPosition') as any;
+		const stripMetadata = formData.get('stripMetadata') === 'on';
+
+		const userTier = user.planTier || 'free';
+		const limits = TIER_LIMITS[userTier as keyof typeof TIER_LIMITS];
+
+		// Enforcement 1: Action Permission
+		const selectedAction = IMAGE_ACTIONS.find((a) => a.value === type);
+		if (selectedAction && !isFeatureAllowed(userTier, selectedAction.minTier)) {
+			return fail(403, { message: `Feature "${selectedAction.label}" required Pro plan.` });
+		}
+
+		// Enforcement 2: Quality Cap
+		if (quality > limits.maxQuality) {
+			quality = limits.maxQuality;
+		}
 
 		if (!files || files.length === 0 || files[0].size === 0) {
 			return fail(400, { message: 'Please upload at least one valid image' });
@@ -73,10 +90,12 @@ export const actions: Actions = {
 						userId: user.id,
 						quality,
 						resize: width || height ? { width, height } : undefined,
+						stripMetadata,
 						watermark:
-							watermarkFile?.size > 0
+							watermarkFile?.size > 0 || watermarkText
 								? {
-										file: watermarkFile,
+										file: watermarkFile?.size > 0 ? watermarkFile : undefined,
+										text: watermarkText || undefined,
 										position: watermarkPosition || 'southeast'
 									}
 								: undefined

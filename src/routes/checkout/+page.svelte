@@ -40,6 +40,28 @@
 	let isSuccess = $state(false);
 	let cardholderName = $state(untrack(() => user?.name || ''));
 
+	const LOADING_MESSAGES = [
+		'Sedang membuat kartu kamu...',
+		'Menghubungkan ke bank keamanan...',
+		'Sebentar lagi siap nih',
+		'Hampir selesai...',
+		'Menyiapkan dashboard kamu...'
+	];
+	let loadingMessageIndex = $state(0);
+	let loadingInterval: any;
+
+	$effect(() => {
+		if (isProcessing) {
+			loadingMessageIndex = 0;
+			loadingInterval = setInterval(() => {
+				loadingMessageIndex = (loadingMessageIndex + 1) % LOADING_MESSAGES.length;
+			}, 2500);
+		} else {
+			clearInterval(loadingInterval);
+		}
+		return () => clearInterval(loadingInterval);
+	});
+
 	let selectedPaymentMethodId = $state(
 		untrack(() => (paymentMethods && paymentMethods.length > 0 ? paymentMethods[0].id : 'new'))
 	);
@@ -476,11 +498,16 @@
 							<Button
 								type="submit"
 								size="lg"
-								class="w-full text-base font-semibold"
+								class="relative w-full overflow-hidden text-base font-semibold transition-all duration-300"
 								disabled={isProcessing}
 							>
 								{#if isProcessing}
-									<Loader2 class="mr-2 h-5 w-5 animate-spin" /> Memproses Pembayaran...
+									<div class="flex items-center gap-3">
+										<Loader2 class="h-5 w-5 animate-spin" />
+										<span class="animate-in duration-300 fade-in slide-in-from-bottom-1">
+											{LOADING_MESSAGES[loadingMessageIndex]}
+										</span>
+									</div>
 								{:else}
 									Bayar {formatPrice(plan.price)}
 								{/if}

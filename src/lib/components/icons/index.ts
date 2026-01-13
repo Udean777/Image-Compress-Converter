@@ -24,5 +24,7 @@ export {
 	ChevronLeft as IconChevronLeft,
 	Eye as IconEye,
 	EyeOff as IconEyeOff,
-	CreditCard as IconBilling
+	CreditCard as IconBilling,
+	File as IconFile,
+	HardDrive as IconHardDrive
 } from '@lucide/svelte';

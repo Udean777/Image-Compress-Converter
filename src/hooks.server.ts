@@ -37,16 +37,86 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	if (userPayload) {
+		const activeSub = await prisma.subscription.findFirst({
+			where: {
+				userId: userPayload.id as string,
+				status: { in: ['active', 'cancelled'] },
+				currentPeriodEnd: { gte: new Date() }
+			},
+			include: { plan: true },
+			orderBy: { createdAt: 'desc' }
+		});
+
 		event.locals.user = {
 			id: userPayload.id as string,
 			email: userPayload.email as string,
 			name: userPayload.name as string | null,
 			credits: 0,
 			avatarUrl: null,
-			role: (userPayload.role as string) || 'USER'
+			role: (userPayload.role as string) || 'USER',
+			planTier: activeSub?.plan.name || 'free'
 		};
 	} else {
 		event.locals.user = null;
+	}
+
+	// 1. Handle Impersonation (Admins only)
+	const impersonateId = event.cookies.get('impersonate_user_id');
+	if (impersonateId && event.locals.user?.role === 'ADMIN') {
+		const impersonatedUser = await prisma.user.findUnique({
+			where: { id: impersonateId },
+			include: {
+				subscriptions: {
+					where: {
+						status: { in: ['active', 'cancelled'] },
+						currentPeriodEnd: { gte: new Date() }
+					},
+					include: { plan: true },
+					orderBy: { createdAt: 'desc' },
+					take: 1
+				}
+			}
+		});
+
+		if (impersonatedUser) {
+			// Save the real admin user in a separate local for UI use if needed
+			event.locals.adminUser = { ...event.locals.user };
+			// Swap the user
+			event.locals.user = {
+				id: impersonatedUser.id,
+				email: impersonatedUser.email,
+				name: impersonatedUser.name,
+				credits: impersonatedUser.credits,
+				avatarUrl: impersonatedUser.avatarUrl,
+				role: impersonatedUser.role,
+				isImpersonating: true,
+				planTier: impersonatedUser.subscriptions[0]?.plan.name || 'free'
+			};
+		}
+	}
+
+	let isMaintenance = false;
+	try {
+		if (prisma.systemConfig) {
+			const maintenanceConfig = await (prisma as any).systemConfig.findUnique({
+				where: { key: 'maintenance_mode' }
+			});
+			isMaintenance = maintenanceConfig?.value === 'true';
+		}
+	} catch (error) {
+		console.error('Maintenance check failed:', error);
+	}
+
+	if (
+		isMaintenance &&
+		event.locals.user?.role !== 'ADMIN' &&
+		event.url.pathname !== '/maintenance'
+	) {
+		if (event.url.pathname.startsWith('/admin') || event.url.pathname.startsWith('/dashboard')) {
+			throw redirect(303, '/maintenance');
+		}
+	} else if (!isMaintenance && event.url.pathname === '/maintenance') {
+		throw redirect(303, event.locals.user ? '/' : '/');
 	}
 
 	if (event.url.pathname.startsWith('/admin')) {
@@ -54,7 +124,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 			throw redirect(303, '/');
 		}
 
-		console.log(event.locals.user.role);
 		if (event.locals.user.role !== 'ADMIN') {
 			throw redirect(303, '/dashboard');
 		}

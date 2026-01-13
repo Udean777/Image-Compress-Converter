@@ -8,8 +8,8 @@
 		IconEye,
 		IconClose
 	} from '$lib/components/icons';
-	import { IMAGE_ACTIONS, IMAGE_FORMATS } from '$lib/constants';
-	import { ImageUpscale } from '@lucide/svelte';
+	import { IMAGE_ACTIONS, IMAGE_FORMATS, isFeatureAllowed, TIER_LIMITS } from '$lib/constants';
+	import { ImageUpscale, Lock } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -17,6 +17,7 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import * as Select from '$lib/components/ui/select';
 	import { formatBytes } from '$lib/format';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import UpgradePromptModal from './UpgradePromptModal.svelte';
 
 	interface Props {
@@ -31,6 +32,8 @@
 	let loading = $state(false);
 	let dragOver = $state(false);
 	let showUpgradeModal = $state(false);
+	let upgradeModalTitle = $state('Upgrade Plan');
+	let upgradeModalDescription = $state('Fitur ini memerlukan plan yang lebih tinggi.');
 
 	interface FilePreview {
 		file: File;
@@ -43,6 +46,8 @@
 
 	let resizeWidth = $state<number>();
 	let resizeHeight = $state<number>();
+	let watermarkText = $state('');
+	let stripMetadata = $state(true);
 
 	let action = $state(IMAGE_ACTIONS[0].value);
 	let targetFormat = $state(IMAGE_FORMATS[0].value);
@@ -116,10 +121,38 @@
 			enctype="multipart/form-data"
 			class="space-y-6"
 			use:enhance={({ cancel, formData }) => {
+				const userTier = user.planTier || 'free';
+				const limits = TIER_LIMITS[userTier as keyof typeof TIER_LIMITS];
+
 				if (user.credits <= 0) {
 					cancel();
+					upgradeModalTitle = 'Credit Habis!';
+					upgradeModalDescription =
+						'Anda telah menggunakan semua credit gratis Anda. Upgrade ke paket Pro untuk terus menggunakan fitur premium tanpa batas.';
 					showUpgradeModal = true;
 					return;
+				}
+
+				// Check action permission
+				const selectedAction = IMAGE_ACTIONS.find((a) => a.value === action);
+				if (selectedAction && !isFeatureAllowed(userTier, selectedAction.minTier)) {
+					cancel();
+					toast.error('Tier kamu belum cukup tinggi, upgrade plan sekarang!');
+					upgradeModalTitle = 'Upgrade Plan Diperlukan';
+					upgradeModalDescription = `Fitur "${selectedAction.label}" memerlukan plan yang lebih tinggi. Upgrade sekarang untuk membuka akses!`;
+					showUpgradeModal = true;
+					return;
+				}
+
+				// Check file size
+				for (const f of files) {
+					if (f.file.size > limits.maxFileSize) {
+						cancel();
+						toast.error(
+							`File ${f.file.name} exceeds ${userTier} limit of ${limits.maxFileSize / 1024 / 1024}MB`
+						);
+						return;
+					}
 				}
 
 				formData.delete('image');
@@ -250,7 +283,16 @@
 						</Select.Trigger>
 						<Select.Content>
 							{#each IMAGE_ACTIONS as item}
-								<Select.Item value={item.value}>{item.label}</Select.Item>
+								<Select.Item
+									value={item.value}
+									class="flex items-center justify-between"
+									disabled={!isFeatureAllowed(user.planTier || 'free', item.minTier)}
+								>
+									<span>{item.label}</span>
+									{#if !isFeatureAllowed(user.planTier || 'free', item.minTier)}
+										<Lock class="ml-2 size-3 text-muted-foreground" />
+									{/if}
+								</Select.Item>
 							{/each}
 						</Select.Content>
 					</Select.Root>
@@ -278,7 +320,15 @@
 					<Label>Quality</Label>
 					<span class="text-sm font-bold text-primary">{quality[0]}%</span>
 				</div>
-				<Slider type="multiple" bind:value={quality} min={10} max={100} step={1} class="w-full" />
+				<Slider
+					type="multiple"
+					bind:value={quality}
+					min={10}
+					max={TIER_LIMITS[(user.planTier as keyof typeof TIER_LIMITS) || 'free']?.maxQuality ||
+						100}
+					step={1}
+					class="w-full"
+				/>
 				<input type="hidden" name="quality" value={quality[0]} />
 				<p class="text-xs text-muted-foreground">Lower quality = smaller file size</p>
 			</div>
@@ -337,23 +387,37 @@
 								class="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
 							>
 								<IconEye class="h-3 w-3" /> Watermark
-								{#if user.tier === 'free'}
+								{#if !isFeatureAllowed(user.planTier || 'free', 'pro')}
 									<span
-										class="ml-auto rounded bg-primary/10 px-1.5 py-0.5 text-[10px] tracking-normal text-primary normal-case"
-										>PRO Only</span
+										class="ml-auto flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] tracking-normal text-primary normal-case"
+										><Lock class="size-2" /> PRO Only</span
 									>
 								{/if}
 							</h4>
-							<div class="space-y-2 {user.tier === 'free' ? 'pointer-events-none opacity-50' : ''}">
-								<Label class="text-xs" for="watermark">Upload Logo</Label>
-								<Input
-									type="file"
-									name="watermark"
-									id="watermark"
-									accept="image/png"
-									disabled={user.tier === 'free'}
-									class="cursor-pointer file:text-primary"
-								/>
+							<div
+								class="space-y-2 {!isFeatureAllowed(user.planTier || 'free', 'pro')
+									? 'pointer-events-none opacity-50'
+									: ''}"
+							>
+								<Label class="text-xs" for="watermark">Watermark Type</Label>
+								<div class="grid grid-cols-2 gap-2">
+									<Input
+										type="text"
+										name="watermarkText"
+										placeholder="Text (e.g. © Studio)"
+										bind:value={watermarkText}
+										class="text-xs"
+									/>
+									<Input
+										type="file"
+										name="watermark"
+										id="watermark"
+										accept="image/png"
+										disabled={!isFeatureAllowed(user.planTier || 'free', 'pro')}
+										class="cursor-pointer text-xs file:text-primary"
+									/>
+								</div>
+								<p class="text-[10px] text-muted-foreground">Upload PNG for logo or enter text</p>
 							</div>
 							<div class="space-y-2">
 								<Label class="text-xs">Position</Label>
@@ -369,6 +433,22 @@
 									</Select.Content>
 								</Select.Root>
 								<input type="hidden" name="watermarkPosition" value={watermarkPosition} />
+							</div>
+
+							<div class="flex items-center space-x-2 pt-2">
+								<Checkbox id="strip-metadata" name="stripMetadata" bind:checked={stripMetadata} />
+								<div class="grid gap-1.5 leading-none">
+									<Label
+										for="strip-metadata"
+										class="text-xs leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+									>
+										Strip Metadata
+									</Label>
+									<p class="text-[10px] text-muted-foreground">
+										Remove EXIF and GPS data for privacy
+									</p>
+								</div>
+								<input type="hidden" name="stripMetadata" value={stripMetadata ? 'on' : 'off'} />
 							</div>
 						</div>
 					</div>
@@ -405,6 +485,10 @@
 			</Button>
 		</form>
 
-		<UpgradePromptModal bind:open={showUpgradeModal} />
+		<UpgradePromptModal
+			bind:open={showUpgradeModal}
+			title={upgradeModalTitle}
+			description={upgradeModalDescription}
+		/>
 	</div>
 </div>

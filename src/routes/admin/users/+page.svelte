@@ -83,6 +83,20 @@
 									>
 								{/if}
 
+								<!-- Impersonate Button (Only for Admins to other users) -->
+								{#if (data.user as any)?.id !== user.id}
+									<form method="POST" action="?/impersonate" use:enhance>
+										<input type="hidden" name="userId" value={user.id} />
+										<Button
+											size="sm"
+											variant="ghost"
+											class="text-blue-500 hover:bg-blue-50 hover:text-blue-600"
+										>
+											Impersonate
+										</Button>
+									</form>
+								{/if}
+
 								<!-- Ban Toggle Form -->
 								<form method="POST" action="?/toggleBan" use:enhance>
 									<input type="hidden" name="userId" value={user.id} />
