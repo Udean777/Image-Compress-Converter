@@ -33,9 +33,12 @@ export const POST = async ({ request, locals }) => {
 						default_payment_method: paymentMethodId
 					}
 				});
-			} catch (err) {
-				console.error('Failed to attach payment method:', err);
-				throw error(400, 'Invalid Payment Method');
+			} catch (err: any) {
+				// Silently ignore if already attached to this customer
+				if (err.code !== 'resource_already_attached') {
+					console.error('Failed to attach payment method:', err);
+					throw error(400, 'Invalid Payment Method');
+				}
 			}
 		}
 
@@ -49,7 +52,9 @@ export const POST = async ({ request, locals }) => {
 			created: { gt: 0 }
 		});
 
-		let product = products.data.find((p) => p.name === plan.displayName);
+		let product = products.data.find(
+			(p) => p.metadata.planId === plan.id || p.name === plan.displayName
+		);
 
 		if (!product) {
 			product = await stripe.products.create({
@@ -101,6 +106,17 @@ export const POST = async ({ request, locals }) => {
 		// 5. Handle Status
 		const status = subscription.status;
 		let clientSecret = null;
+
+		// If subscription is immediately active, sync to local database now
+		// (This ensures credits are granted even without webhook in dev mode)
+		if (status === 'active') {
+			await subscriptionService.activateSubscription({
+				userId: user.id,
+				planId: plan.id,
+				paymentId: subscription.id,
+				stripeSubscriptionId: subscription.id
+			});
+		}
 
 		if (status === 'incomplete' || status === 'past_due') {
 			const latestInvoice = subscription.latest_invoice as Stripe.Invoice & {

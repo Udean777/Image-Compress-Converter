@@ -10,7 +10,8 @@
 		IconUser,
 		IconSettings as IconActivity,
 		IconHardDrive as IconStorage,
-		IconBolt
+		IconBolt,
+		IconCloud
 	} from '$lib/components/icons';
 	import { page } from '$app/stores';
 	import SubscriptionWidget from './SubscriptionWidget.svelte';
@@ -23,7 +24,8 @@
 	const platformNav = [
 		{ href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
 		{ href: '/dashboard/history', label: 'History', icon: IconHistory },
-		{ href: '/dashboard/gallery', label: 'Gallery', icon: IconImage }
+		{ href: '/dashboard/gallery', label: 'Gallery', icon: IconImage },
+		{ href: '/dashboard/connectors', label: 'Connectors', icon: IconCloud }
 	];
 
 	const billingNav = [

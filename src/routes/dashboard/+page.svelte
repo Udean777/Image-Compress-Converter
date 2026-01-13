@@ -27,7 +27,7 @@
 	</header>
 
 	<div class="relative grid w-full gap-4 sm:gap-6 xl:grid-cols-2">
-		<ImageUploadForm onSuccess={handleSuccess} user={data.user} />
+		<ImageUploadForm onSuccess={handleSuccess} user={data.user} connectors={data.connectors} />
 
 		<div class="w-full min-w-0 space-y-6 overflow-x-hidden">
 			{#if showSuccessResult && form?.results}
@@ -73,7 +73,7 @@
 					</div>
 
 					<div class="grid gap-4 {form.results.length > 1 ? 'md:grid-cols-2' : ''}">
-						{#each form.results as result, i}
+						{#each form.results as any[] as result, i}
 							{#if 'url' in result}
 								<ProcessResult {result} originalUrl={originalObjectUrls[i]} />
 							{:else if 'data' in result && result.data?.message}

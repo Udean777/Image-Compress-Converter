@@ -21,6 +21,24 @@ export interface IResizeOptions {
 	fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
 }
 
+export interface ICropOptions {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	filters?: {
+		brightness?: number;
+		contrast?: number;
+		saturation?: number;
+		grayscale?: number;
+	};
+	watermark?: {
+		text: string;
+		x: number;
+		y: number;
+	};
+}
+
 // [NEW] Interface untuk opsi Watermark
 export interface IWatermarkOptions {
 	file?: File;
@@ -50,6 +68,10 @@ export interface IProcessImageInput {
 	resize?: IResizeOptions;
 	watermark?: IWatermarkOptions;
 	stripMetadata?: boolean;
+	crop?: ICropOptions;
+	generateAltText?: boolean;
+	upscale?: boolean;
+	smartCompression?: boolean;
 }
 
 export interface IProcessImageOutput {
@@ -59,6 +81,7 @@ export interface IProcessImageOutput {
 	originalSize: number;
 	newSize: number;
 	format: string;
+	altText?: string;
 }
 
 export interface ProcessSuccess {

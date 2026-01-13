@@ -5,8 +5,17 @@
 
 	let { user } = $props();
 
-	const maxCredits = $derived(user.tier === 'free' ? 15 : 100);
-	const creditPercentage = $derived((user.credits / maxCredits) * 100);
+	// Sesuaikan dengan seed-pricing.ts: free=15, starter=100, pro=300, business=1000
+	const TIER_CREDITS: Record<string, number> = {
+		free: 15,
+		starter: 100,
+		pro: 300,
+		business: 1000
+	};
+
+	const tier = $derived(user.planTier || 'free');
+	const maxCredits = $derived(TIER_CREDITS[tier] || 15);
+	const creditPercentage = $derived(Math.min((user.credits / maxCredits) * 100, 100));
 </script>
 
 <div class="space-y-4 px-4 py-4">
@@ -19,14 +28,14 @@
 				<span class="text-xs font-bold tracking-wider text-primary uppercase">{user.planName}</span>
 			</div>
 			<span class="truncate text-xs font-medium whitespace-break-spaces text-muted-foreground"
-				>{user.credits} Credit</span
+				>{user.credits} / {maxCredits} Credit</span
 			>
 		</div>
 
 		<Progress value={creditPercentage} class="mb-4 h-1.5" />
 
 		<div class="flex w-full flex-col gap-4">
-			{#if user.tier !== 'free'}
+			{#if tier !== 'free'}
 				<Button
 					href="/dashboard/billing"
 					variant="outline"
@@ -39,7 +48,7 @@
 
 			<Button href="/dashboard/upgrade" size="sm" class="w-full gap-2 text-xs font-bold">
 				<Zap class="size-3 fill-current" />
-				{user.tier === 'free' ? 'Upgrade Pro' : 'Lihat Paket Lain'}
+				{tier === 'free' ? 'Upgrade Pro' : 'Lihat Paket Lain'}
 			</Button>
 		</div>
 	</div>

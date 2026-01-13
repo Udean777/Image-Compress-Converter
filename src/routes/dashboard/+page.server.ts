@@ -1,5 +1,7 @@
 import { ImageService } from '$lib/server/services/ImageService';
 import { UserService } from '$lib/server/services/UserService';
+import { AIService } from '$lib/server/services/AIService';
+import { CloudConnectorService } from '$lib/server/services/CloudConnectorService';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { prisma } from '$lib/server/db';
@@ -8,50 +10,59 @@ import { IMAGE_ACTIONS, isFeatureAllowed, TIER_LIMITS } from '$lib/constants';
 
 const imageService = new ImageService();
 const userService = new UserService();
+const aiService = new AIService();
+const connectorService = new CloudConnectorService();
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { user } = await parent();
 	if (!locals.user) throw redirect(303, '/');
 
 	const historyRaw = await userService.getUserHistory(locals.user.id);
+	const connectors = await connectorService.getActiveConfigs(locals.user.id);
 
 	const history = await Promise.all(
 		historyRaw.map(async (item) => {
 			const freshUrl = await imageService.generatePresignedUrl(item.fileName, true);
-
-			return {
-				...item,
-				outputUrl: freshUrl
-			};
+			return { ...item, outputUrl: freshUrl };
 		})
 	);
 
 	return {
 		user,
-		history
+		history,
+		connectors
 	};
 };
 
 export const actions: Actions = {
 	process: async ({ locals, request }) => {
-		if (!locals.user)
-			return fail(401, {
-				message: 'Unauthorized'
-			});
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 
 		const user = locals.user;
 		const formData = await request.formData();
 
-		const files = formData.getAll('image') as File[];
+		const files = formData.getAll('images') as File[];
 		const type = formData.get('action') as ProcessType;
 		const targetFormat = formData.get('format') as ImageFormat;
-		let quality = parseInt(formData.get('quality') as string) || 80;
+		let qualityValue = parseInt(formData.get('quality') as string) || 80;
 		const width = formData.get('width') ? parseInt(formData.get('width') as string) : undefined;
 		const height = formData.get('height') ? parseInt(formData.get('height') as string) : undefined;
 		const watermarkFile = formData.get('watermark') as File;
 		const watermarkText = formData.get('watermarkText') as string;
 		const watermarkPosition = formData.get('watermarkPosition') as any;
 		const stripMetadata = formData.get('stripMetadata') === 'on';
+
+		// AI Flags
+		const generateAltText = formData.get('generateAltText') === 'true';
+		const upscale = formData.get('upscale') === 'true';
+		const smartCompression = formData.get('smartCompression') === 'true';
+
+		// Cloud Destination
+		const destinationProvider = formData.get('destination') as string; // e.g. 's3', 'google_drive'
+		let externalConfig = null;
+		if (destinationProvider && destinationProvider !== 'default') {
+			externalConfig = await connectorService.getConfig(user.id, destinationProvider);
+		}
 
 		const userTier = user.planTier || 'free';
 		const limits = TIER_LIMITS[userTier as keyof typeof TIER_LIMITS];
@@ -63,43 +74,55 @@ export const actions: Actions = {
 		}
 
 		// Enforcement 2: Quality Cap
-		if (quality > limits.maxQuality) {
-			quality = limits.maxQuality;
-		}
+		if (qualityValue > limits.maxQuality) qualityValue = limits.maxQuality;
 
 		if (!files || files.length === 0 || files[0].size === 0) {
-			return fail(400, { message: 'Please upload at least one valid image' });
+			return fail(400, { message: 'No images selected' });
 		}
 
 		const currentCredits = await userService.getUserCredits(user.id);
 		if (currentCredits < files.length) {
-			return fail(400, { message: `Insufficient credits. You need ${files.length} credits.` });
+			return fail(400, { message: `Insufficient credits.` });
 		}
 
 		try {
 			const results = await Promise.all(
-				files.map(async (file) => {
-					if (file.size > 10 * 1024 * 1024) {
-						return fail(400, { message: 'Image size exceeds 10MB' });
+				files.map(async (file, index) => {
+					// Get crop data
+					const cropDataRaw = formData.get(`crop_${index}`) as string;
+					const crop = cropDataRaw ? JSON.parse(cropDataRaw) : undefined;
+
+					let finalQuality = qualityValue;
+					if (smartCompression) {
+						finalQuality = await aiService.suggestCompression(targetFormat, file.size);
 					}
 
-					const result = await imageService.process({
-						file,
-						type: type || ProcessType.COMPRESS,
-						targetFormat,
-						userId: user.id,
-						quality,
-						resize: width || height ? { width, height } : undefined,
-						stripMetadata,
-						watermark:
-							watermarkFile?.size > 0 || watermarkText
-								? {
-										file: watermarkFile?.size > 0 ? watermarkFile : undefined,
-										text: watermarkText || undefined,
-										position: watermarkPosition || 'southeast'
-									}
-								: undefined
-					});
+					const result = await imageService.process(
+						{
+							file,
+							type: type || ProcessType.COMPRESS,
+							targetFormat,
+							userId: user.id,
+							quality: finalQuality,
+							resize: width || height ? { width, height } : undefined,
+							stripMetadata,
+							crop,
+							upscale,
+							watermark:
+								watermarkFile?.size > 0 || watermarkText
+									? {
+											file: watermarkFile?.size > 0 ? watermarkFile : undefined,
+											text: watermarkText || undefined,
+											position: watermarkPosition || 'southeast'
+										}
+									: undefined
+						},
+						externalConfig
+					);
+
+					if (generateAltText) {
+						result.altText = await aiService.generateAltText(file.name, targetFormat, file.size);
+					}
 
 					await userService.recordActivity(
 						user.id,
@@ -115,17 +138,16 @@ export const actions: Actions = {
 						originalSize: result.originalSize,
 						newSize: result.newSize,
 						format: result.format,
+						altText: result.altText,
 						stats: `Saved ${(100 - (result.newSize / result.originalSize) * 100).toFixed(1)}%`
 					};
 				})
 			);
 
-			const newCreditBalance = currentCredits - files.length;
-
 			return {
 				success: true,
-				newCredits: newCreditBalance,
-				results: results
+				newCredits: currentCredits - files.length,
+				results
 			};
 		} catch (error: any) {
 			console.error(error);

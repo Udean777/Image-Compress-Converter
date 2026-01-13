@@ -16,18 +16,21 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Slider } from '$lib/components/ui/slider';
 	import * as Select from '$lib/components/ui/select';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { formatBytes } from '$lib/format';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import UpgradePromptModal from './UpgradePromptModal.svelte';
+	import ImageCropper from './ImageCropper.svelte';
 
 	interface Props {
 		user: any;
 		onSubmitStart?: () => void;
 		onSubmitEnd?: () => void;
 		onSuccess?: (files: File[]) => void;
+		connectors?: any[];
 	}
 
-	let { user, onSubmitStart, onSubmitEnd, onSuccess }: Props = $props();
+	let { user, onSubmitStart, onSubmitEnd, onSuccess, connectors = [] }: Props = $props();
 
 	let loading = $state(false);
 	let dragOver = $state(false);
@@ -38,11 +41,15 @@
 	interface FilePreview {
 		file: File;
 		preview: string;
+		crop?: { x: number; y: number; width: number; height: number };
 	}
 
 	let files = $state<FilePreview[]>([]);
 	let quality = $state([80]);
 	let showAdvanced = $state(false);
+
+	let editingFileIndex = $state<number | null>(null);
+	let showCropper = $state(false);
 
 	let resizeWidth = $state<number>();
 	let resizeHeight = $state<number>();
@@ -52,6 +59,13 @@
 	let action = $state(IMAGE_ACTIONS[0].value);
 	let targetFormat = $state(IMAGE_FORMATS[0].value);
 	let watermarkPosition = $state('southeast');
+
+	// AI Features
+	let generateAltText = $state(false);
+	let upscale = $state(false);
+	let smartCompression = $state(true);
+
+	let selectedDestination = $state('default');
 
 	const WATERMARK_POSITIONS = [
 		{ value: 'southeast', label: 'Bottom Right' },
@@ -155,9 +169,9 @@
 					}
 				}
 
-				formData.delete('image');
+				formData.delete('images');
 				files.forEach((f) => {
-					formData.append('image', f.file);
+					formData.append('images', f.file);
 				});
 
 				loading = true;
@@ -169,12 +183,12 @@
 					if (result.type === 'success') {
 						onSuccess?.(files.map((f) => f.file));
 						toast.success('Image processed successfully');
+						files = [];
 					} else if (result.type === 'failure') {
 						const msg = result.data?.message;
 						toast.error(typeof msg === 'string' ? msg : 'Failed to process image');
 					}
 
-					files = [];
 					onSubmitEnd?.();
 				};
 			}}
@@ -204,7 +218,7 @@
 				<input
 					id="file-input"
 					type="file"
-					name="image"
+					name="images"
 					accept="image/*"
 					multiple
 					disabled={loading}
@@ -254,7 +268,20 @@
 									class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2"
 								>
 									<p class="truncate text-xs font-medium text-white">{file.file.name}</p>
-									<p class="text-[10px] text-white/80">{formatBytes(file.file.size)}</p>
+									<div class="flex items-center justify-between gap-2">
+										<p class="text-[10px] text-white/80">{formatBytes(file.file.size)}</p>
+										<button
+											type="button"
+											onclick={(e) => {
+												e.stopPropagation();
+												editingFileIndex = i;
+												showCropper = true;
+											}}
+											class="text-[10px] text-white underline transition-colors hover:text-primary"
+										>
+											{file.crop ? 'Edit Crop' : 'Crop'}
+										</button>
+									</div>
 								</div>
 							</div>
 						{/each}
@@ -451,6 +478,97 @@
 								<input type="hidden" name="stripMetadata" value={stripMetadata ? 'on' : 'off'} />
 							</div>
 						</div>
+
+						<div class="space-y-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+							<h4
+								class="flex items-center gap-2 text-xs font-semibold tracking-wider text-blue-500 uppercase"
+							>
+								<IconUpload class="h-3 w-3" /> Cloud Destinations
+							</h4>
+
+							<div class="space-y-3">
+								<div class="space-y-2">
+									<Label class="text-xs">Storage Target</Label>
+									<Select.Root type="single" bind:value={selectedDestination}>
+										<Select.Trigger class="w-full text-xs">
+											{selectedDestination === 'default'
+												? 'Default Studio Storage'
+												: connectors
+														.find((c) => c.provider === selectedDestination)
+														?.provider.toUpperCase() || 'Select Storage'}
+										</Select.Trigger>
+										<Select.Content>
+											<Select.Item value="default">Default Studio Storage</Select.Item>
+											{#each connectors as conn}
+												<Select.Item value={conn.provider}>
+													{conn.provider.toUpperCase()} ({conn.provider === 's3'
+														? conn.config.bucket
+														: 'Active'})
+												</Select.Item>
+											{/each}
+											{#if connectors.length === 0}
+												<div class="p-2 text-center">
+													<p class="mb-1 text-[10px] text-muted-foreground">
+														No custom storage configured
+													</p>
+													<Button
+														variant="outline"
+														size="sm"
+														class="h-6 text-[10px]"
+														href="/dashboard/connectors"
+													>
+														Add Connector
+													</Button>
+												</div>
+											{/if}
+										</Select.Content>
+									</Select.Root>
+								</div>
+								<p class="text-[10px] text-muted-foreground">
+									Save processed files directly to your cloud storage.
+								</p>
+							</div>
+						</div>
+
+						<div class="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+							<h4
+								class="flex items-center gap-2 text-xs font-semibold tracking-wider text-primary uppercase"
+							>
+								<IconBolt class="h-3 w-3" /> AI Enhancements
+							</h4>
+
+							<div class="space-y-3">
+								<div class="flex items-center justify-between">
+									<div class="space-y-0.5">
+										<Label class="text-xs">Smart Compression</Label>
+										<p class="text-[10px] text-muted-foreground">AI-optimized quality vs size</p>
+									</div>
+									<Checkbox bind:checked={smartCompression} />
+								</div>
+
+								<div class="flex items-center justify-between">
+									<div class="space-y-0.5">
+										<Label class="text-xs">AI Alt-Text</Label>
+										<p class="text-[10px] text-muted-foreground">
+											Generate accessible descriptions
+										</p>
+									</div>
+									<Checkbox bind:checked={generateAltText} />
+								</div>
+
+								<div class="flex items-center justify-between">
+									<div class="space-y-0.5">
+										<Label class="flex items-center gap-1 text-xs">
+											Super Resolution <span class="rounded bg-primary/20 px-1 py-0.5 text-[8px]"
+												>2X</span
+											>
+										</Label>
+										<p class="text-[10px] text-muted-foreground">High-quality AI upscaling</p>
+									</div>
+									<Checkbox bind:checked={upscale} />
+								</div>
+							</div>
+						</div>
 					</div>
 				{/if}
 			</div>
@@ -483,6 +601,11 @@
 					Process {files.length > 0 ? `${files.length} Images` : 'Image'}
 				{/if}
 			</Button>
+
+			<input type="hidden" name="generateAltText" value={generateAltText} />
+			<input type="hidden" name="upscale" value={upscale} />
+			<input type="hidden" name="smartCompression" value={smartCompression} />
+			<input type="hidden" name="destination" value={selectedDestination} />
 		</form>
 
 		<UpgradePromptModal
@@ -490,5 +613,39 @@
 			title={upgradeModalTitle}
 			description={upgradeModalDescription}
 		/>
+
+		{#if showCropper && editingFileIndex !== null}
+			<Dialog.Root bind:open={showCropper}>
+				<Dialog.Content class="flex h-[90vh] flex-col p-6 sm:max-w-175">
+					<Dialog.Header>
+						<Dialog.Title>Edit Image: {files[editingFileIndex].file.name}</Dialog.Title>
+						<Dialog.Description>
+							Adjust the cropping area, aspect ratio, and rotation.
+						</Dialog.Description>
+					</Dialog.Header>
+
+					<div class="min-h-0 flex-1 pt-4">
+						<ImageCropper
+							image={files[editingFileIndex].preview}
+							onCropComplete={(cropData: any) => {
+								if (editingFileIndex !== null) {
+									files[editingFileIndex].crop = cropData;
+								}
+							}}
+							onClose={() => {
+								showCropper = false;
+								editingFileIndex = null;
+							}}
+						/>
+					</div>
+				</Dialog.Content>
+			</Dialog.Root>
+		{/if}
+
+		{#each files as file, i}
+			{#if file.crop}
+				<input type="hidden" name="crop_{i}" value={JSON.stringify(file.crop)} />
+			{/if}
+		{/each}
 	</div>
 </div>

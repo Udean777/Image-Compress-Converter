@@ -26,5 +26,6 @@ export {
 	EyeOff as IconEyeOff,
 	CreditCard as IconBilling,
 	File as IconFile,
-	HardDrive as IconHardDrive
+	HardDrive as IconHardDrive,
+	Cloud as IconCloud
 } from '@lucide/svelte';

@@ -26,7 +26,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	return {
 		user: {
 			...user,
-			tier: subscription?.plan.name ?? 'free',
+			planTier: subscription?.plan.name ?? 'free',
 			planName: subscription?.plan.displayName ?? 'Free Plan'
 		}
 	};

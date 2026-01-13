@@ -19,15 +19,22 @@ export const POST = async ({ request, locals }) => {
 	try {
 		const customerId = await subscriptionService.getOrCreateCustomerId(user.id);
 
-		await stripe.paymentMethods.attach(paymentMethodId, {
-			customer: customerId
-		});
+		try {
+			await stripe.paymentMethods.attach(paymentMethodId, {
+				customer: customerId
+			});
 
-		await stripe.customers.update(customerId, {
-			invoice_settings: {
-				default_payment_method: paymentMethodId
+			await stripe.customers.update(customerId, {
+				invoice_settings: {
+					default_payment_method: paymentMethodId
+				}
+			});
+		} catch (err: any) {
+			// Silently ignore if already attached
+			if (err.code !== 'resource_already_attached') {
+				console.error('Error attaching PM in saved flow:', err);
 			}
-		});
+		}
 
 		const products = await stripe.products.list({ limit: 100 });
 		let product = products.data.find((p) => p.name === plan.displayName);

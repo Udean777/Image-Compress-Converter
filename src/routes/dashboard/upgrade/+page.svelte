@@ -32,7 +32,10 @@
 		}).format(price);
 	};
 
+	let selectingPlanId = $state<string | null>(null);
+
 	async function handlePlanSelection(plan: any) {
+		selectingPlanId = plan.id;
 		goto(`/checkout?planId=${plan.id}`);
 	}
 
@@ -150,7 +153,7 @@
 				</ul>
 
 				<Button
-					disabled={isCurrentPlan || isLowerTier}
+					disabled={isCurrentPlan || isLowerTier || !!selectingPlanId}
 					variant={isCurrentPlan
 						? 'outline'
 						: isLowerTier
@@ -161,7 +164,14 @@
 					class="w-full py-5 font-semibold"
 					onclick={() => handlePlanSelection(plan)}
 				>
-					{#if isCurrentPlan}
+					{#if selectingPlanId === plan.id}
+						<span class="flex items-center gap-2">
+							<span
+								class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+							></span>
+							Memproses...
+						</span>
+					{:else if isCurrentPlan}
 						Paket Saat Ini
 					{:else if isLowerTier}
 						Tidak Bisa Downgrade Plan

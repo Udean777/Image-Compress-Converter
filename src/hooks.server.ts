@@ -60,7 +60,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.user = null;
 	}
 
-	// 1. Handle Impersonation (Admins only)
 	const impersonateId = event.cookies.get('impersonate_user_id');
 	if (impersonateId && event.locals.user?.role === 'ADMIN') {
 		const impersonatedUser = await prisma.user.findUnique({
@@ -79,9 +78,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		});
 
 		if (impersonatedUser) {
-			// Save the real admin user in a separate local for UI use if needed
 			event.locals.adminUser = { ...event.locals.user };
-			// Swap the user
 			event.locals.user = {
 				id: impersonatedUser.id,
 				email: impersonatedUser.email,

@@ -28,6 +28,7 @@ model User {
   subscriptions      Subscription[]
   payments           Payment[]
   creditTransactions CreditTransaction[]
+  storageConfigs     StorageConfig[]
 }
 
 model Session {
@@ -133,4 +134,17 @@ model Announcement {
   target    String    @default("all") // all, free, pro, etc.
   expiresAt DateTime?
   createdAt DateTime  @default(now())
+}
+
+model StorageConfig {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String // 's3', 'google_drive', 'dropbox'
+  config    Json // Store credentials/tokens securely
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, provider])
 }

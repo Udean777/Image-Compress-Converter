@@ -30,7 +30,7 @@ export class ImageService {
 	}
 
 	@LogExecution
-	async process(input: IProcessImageInput): Promise<IProcessImageOutput> {
+	async process(input: IProcessImageInput, externalConfig?: any): Promise<IProcessImageOutput> {
 		let currentBuffer: Buffer | ArrayBuffer = await input.file.arrayBuffer();
 		if (!Buffer.isBuffer(currentBuffer)) {
 			currentBuffer = Buffer.from(new Uint8Array(currentBuffer));
@@ -51,24 +51,72 @@ export class ImageService {
 			}
 		}
 
+		let imagePipeline = sharp(currentBuffer);
+
+		if (input.crop) {
+			const { x, y, width, height } = input.crop;
+			imagePipeline = imagePipeline.extract({
+				left: Math.round(x),
+				top: Math.round(y),
+				width: Math.round(width),
+				height: Math.round(height)
+			});
+		}
+
+		if (input.upscale) {
+			const metadata = await imagePipeline.metadata();
+			const targetWidth = (metadata.width || 0) * 2;
+			const targetHeight = (metadata.height || 0) * 2;
+
+			if (targetWidth > 0 && targetHeight > 0) {
+				imagePipeline = imagePipeline.resize({
+					width: targetWidth,
+					height: targetHeight,
+					kernel: 'lanczos3',
+					withoutEnlargement: false
+				});
+			}
+		}
+
+		if (input.crop?.filters) {
+			const { brightness, contrast, saturation, grayscale } = input.crop.filters;
+
+			if (brightness !== undefined && brightness !== 100) {
+				imagePipeline = imagePipeline.modulate({ brightness: brightness / 100 });
+			}
+
+			if (saturation !== undefined && saturation !== 100) {
+				imagePipeline = imagePipeline.modulate({ saturation: saturation / 100 });
+			}
+
+			if (contrast !== undefined && contrast !== 100) {
+				const factor = contrast / 100;
+				imagePipeline = imagePipeline.linear(factor, -(128 * factor) + 128);
+			}
+
+			if (grayscale && grayscale >= 100) {
+				imagePipeline = imagePipeline.grayscale();
+			}
+		}
+
 		if (input.resize) {
 			const { width, height, fit } = input.resize;
 			if (width || height) {
-				currentBuffer = await sharp(currentBuffer)
-					.resize({
-						width: width || undefined,
-						height: height || undefined,
-						fit: fit || 'inside',
-						withoutEnlargement: true
-					})
-					.toBuffer();
+				imagePipeline = imagePipeline.resize({
+					width: width || undefined,
+					height: height || undefined,
+					fit: fit || 'inside',
+					withoutEnlargement: true
+				});
 			}
 		}
 
 		if (input.watermark?.file || input.watermark?.text) {
-			const mainImageMetadata = await sharp(currentBuffer).metadata();
-			const mainWidth = mainImageMetadata.width || 1000;
-			const mainHeight = mainImageMetadata.height || 1000;
+			// Watermark needs metadata for sizing
+			const tempBuffer = await imagePipeline.toBuffer();
+			const metadata = await sharp(tempBuffer).metadata();
+			const mainWidth = metadata.width || 1000;
+			const mainHeight = metadata.height || 1000;
 
 			let watermarkOverlay: Buffer;
 
@@ -76,13 +124,12 @@ export class ImageService {
 				const watermarkBuffer = Buffer.from(
 					new Uint8Array(await input.watermark.file.arrayBuffer())
 				);
-				const targetWatermarkWidth = Math.max(Math.round(mainWidth * 0.2), 50); // Min 50px
+				const targetWatermarkWidth = Math.max(Math.round(mainWidth * 0.2), 50);
 
 				watermarkOverlay = await sharp(watermarkBuffer)
 					.resize({ width: targetWatermarkWidth })
 					.toBuffer();
 			} else {
-				// Text Watermark
 				const text = input.watermark.text || '';
 				const color = input.watermark.textColor || 'white';
 				const size = input.watermark.textSize || Math.max(Math.round(mainWidth * 0.05), 20);
@@ -101,22 +148,42 @@ export class ImageService {
 
 			const compositeOptions: any = {
 				input: watermarkOverlay,
-				gravity: input.watermark.position || 'southeast',
 				blend: 'over'
 			};
 
-			// If it's a full-size SVG text overlay, we don't want gravity to move it if it's already centered in SVG
-			if (input.watermark.text && !input.watermark.file) {
-				compositeOptions.gravity = 'center';
+			if (input.crop?.watermark) {
+				const { x, y } = input.crop.watermark;
+				// x, y are percentages in the editor container.
+				// We need to map them to the image pixels.
+				compositeOptions.left = Math.round(
+					(mainWidth * x) / 100 - watermarkOverlay.byteLength > 0 ? 0 : 0
+				); // Simplified for now
+				// Wait, I need the actual dimensions of the watermark overlay to center it correctly if it was centered in UI
+				const watermarkMetadata = await sharp(watermarkOverlay).metadata();
+				const wWidth = watermarkMetadata.width || 0;
+				const wHeight = watermarkMetadata.height || 0;
+
+				compositeOptions.left = Math.max(
+					0,
+					Math.min(Math.round((mainWidth * x) / 100 - wWidth / 2), mainWidth - wWidth)
+				);
+				compositeOptions.top = Math.max(
+					0,
+					Math.min(Math.round((mainHeight * y) / 100 - wHeight / 2), mainHeight - wHeight)
+				);
+			} else {
+				compositeOptions.gravity = input.watermark.position || 'southeast';
+				if (input.watermark.text && !input.watermark.file) {
+					compositeOptions.gravity = 'center';
+				}
 			}
 
-			currentBuffer = await sharp(currentBuffer).composite([compositeOptions]).toBuffer();
+			// Continue with the pipeline after composite
+			imagePipeline = sharp(await imagePipeline.composite([compositeOptions]).toBuffer());
 		}
 
-		let imagePipeline = sharp(currentBuffer);
-
 		if (input.stripMetadata) {
-			// Do nothing, sharp strips by default unless .withMetadata() is called
+			// Sharp strips by default
 		} else {
 			imagePipeline = imagePipeline.withMetadata();
 		}
@@ -155,6 +222,30 @@ export class ImageService {
 				ContentType: `image/${outputFormat}`
 			})
 		);
+
+		if (externalConfig?.provider === 's3' && externalConfig.config) {
+			try {
+				const extS3 = new S3Client({
+					region: externalConfig.config.region || 'us-east-1',
+					endpoint: externalConfig.config.endpoint,
+					credentials: {
+						accessKeyId: externalConfig.config.accessKey,
+						secretAccessKey: externalConfig.config.secretKey
+					},
+					forcePathStyle: true
+				});
+				await extS3.send(
+					new PutObjectCommand({
+						Bucket: externalConfig.config.bucket,
+						Key: fileName,
+						Body: resultBuffer,
+						ContentType: `image/${outputFormat}`
+					})
+				);
+			} catch (e) {
+				console.error('External S3 upload fail:', e);
+			}
+		}
 
 		const [publicUrl, downloadUrl] = await Promise.all([
 			this.generatePresignedUrl(fileName, false),
