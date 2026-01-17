@@ -127,7 +127,7 @@ export class SubscriptionService {
 					currency: plan.currency,
 					status: 'paid',
 					paymentType: 'stripe',
-					midtransOrderId: paymentId || `SUB-${subscription.id}`,
+					orderId: paymentId || `SUB-${subscription.id}`,
 					paidAt: now
 				}
 			});

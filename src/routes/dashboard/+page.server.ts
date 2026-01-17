@@ -173,5 +173,21 @@ export const actions: Actions = {
 	logout: async ({ cookies }) => {
 		const { performLogout } = await import('$lib/server/auth');
 		await performLogout(cookies);
+	},
+
+	togglePermanent: async ({ locals, request }) => {
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
+
+		const formData = await request.formData();
+		const historyId = formData.get('historyId') as string;
+		const isPermanent = formData.get('isPermanent') === 'true';
+
+		if (!historyId) {
+			return fail(400, { message: 'Invalid history ID' });
+		}
+
+		await userService.markHistoryPermanent(historyId, locals.user.id, isPermanent);
+
+		return { toggleSuccess: true };
 	}
 };

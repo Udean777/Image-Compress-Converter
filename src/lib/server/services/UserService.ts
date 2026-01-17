@@ -2,6 +2,9 @@ import type { PrismaClient } from '@prisma/client';
 import { LogExecution } from '../decorators';
 import { prisma } from '../db';
 
+// History expires after 7 days by default
+const HISTORY_EXPIRY_DAYS = 7;
+
 export class UserService {
 	private db: PrismaClient;
 
@@ -30,6 +33,10 @@ export class UserService {
 	) {
 		const COST_PER_ACTION = 1;
 
+		// Calculate expiration date (7 days from now)
+		const expiresAt = new Date();
+		expiresAt.setDate(expiresAt.getDate() + HISTORY_EXPIRY_DAYS);
+
 		return await this.db.$transaction(async (tx) => {
 			const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
 
@@ -49,7 +56,9 @@ export class UserService {
 					outputFormat,
 					fileName,
 					outputUrl,
-					creditsUsed: COST_PER_ACTION
+					creditsUsed: COST_PER_ACTION,
+					expiresAt,
+					isPermanent: false
 				}
 			});
 
@@ -60,12 +69,14 @@ export class UserService {
 	async getUserHistory(userId: string) {
 		return await this.db.history.findMany({
 			where: {
-				userId
+				userId,
+				// Only show non-expired or permanent histories
+				OR: [{ isPermanent: true }, { expiresAt: { gte: new Date() } }, { expiresAt: null }]
 			},
 			orderBy: {
 				createdAt: 'desc'
 			},
-			take: 10
+			take: 20
 		});
 	}
 
@@ -76,5 +87,40 @@ export class UserService {
 				userId: userId
 			}
 		});
+	}
+
+	/**
+	 * Mark a history item as permanent (will not be auto-deleted)
+	 */
+	async markHistoryPermanent(historyId: string, userId: string, isPermanent: boolean = true) {
+		return await this.db.history.updateMany({
+			where: {
+				id: historyId,
+				userId: userId
+			},
+			data: {
+				isPermanent,
+				expiresAt: isPermanent
+					? null
+					: new Date(Date.now() + HISTORY_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+			}
+		});
+	}
+
+	/**
+	 * Cleanup expired history items (to be called by a cron job or scheduled task)
+	 */
+	async cleanupExpiredHistory(): Promise<number> {
+		const result = await this.db.history.deleteMany({
+			where: {
+				isPermanent: false,
+				expiresAt: {
+					lt: new Date()
+				}
+			}
+		});
+
+		console.log(`[UserService] Cleaned up ${result.count} expired history items`);
+		return result.count;
 	}
 }

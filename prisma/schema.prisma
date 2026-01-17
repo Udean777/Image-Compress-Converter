@@ -18,7 +18,7 @@ model User {
   name      String?
   avatarUrl String?
   password  String
-  credits   Int      @default(20)
+  credits   Int      @default(15)
   createdAt DateTime @default(now())
   role      String   @default("USER")
   isBanned  Boolean  @default(false)
@@ -93,22 +93,20 @@ model Subscription {
 }
 
 model Payment {
-  id               String    @id @default(uuid())
-  userId           String
-  subscriptionId   String?
-  amount           Int
-  currency         String    @default("IDR")
-  status           String
-  paymentType      String?
-  midtransOrderId  String    @unique
-  midtransTransId  String?   @unique
-  midtransResponse Json?
-  createdAt        DateTime  @default(now())
-  paidAt           DateTime?
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  userId         String
+  subscriptionId String?
+  amount         Int
+  currency       String    @default("IDR")
+  status         String
+  paymentType    String?
+  orderId        String    @unique
+  createdAt      DateTime  @default(now())
+  paidAt         DateTime?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([midtransOrderId])
+  @@index([orderId])
 }
 
 model CreditTransaction {

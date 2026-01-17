@@ -220,7 +220,7 @@
 					</div>
 					<div>
 						<span class="text-gray-500">ID Transaksi:</span>
-						<span class="ml-2 font-mono text-xs text-gray-900">{payment.midtransOrderId}</span>
+						<span class="ml-2 font-mono text-xs text-gray-900">{payment.orderId}</span>
 					</div>
 				</div>
 			</div>

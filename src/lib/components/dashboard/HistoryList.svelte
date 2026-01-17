@@ -2,12 +2,16 @@
 	import { enhance } from '$app/forms';
 	import { IconClock, IconImage, IconClose, IconInbox } from '$lib/components/icons';
 	import { toast } from 'svelte-sonner';
+	import { Pin, Clock } from '@lucide/svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	interface HistoryItem {
 		id: string;
 		fileName?: string | null;
 		action?: string | null;
 		outputUrl?: string | null;
+		expiresAt?: Date | string | null;
+		isPermanent?: boolean;
 	}
 
 	interface Props {
@@ -17,6 +21,17 @@
 	let { history }: Props = $props();
 
 	let hasHistory = $derived(history && history.length > 0);
+
+	function formatExpiryDate(date: Date | string | null | undefined): string {
+		if (!date) return '';
+		const d = new Date(date);
+		const now = new Date();
+		const diff = d.getTime() - now.getTime();
+		const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+		if (days <= 0) return 'Kadaluarsa';
+		if (days === 1) return '1 hari lagi';
+		return `${days} hari lagi`;
+	}
 </script>
 
 <section
@@ -48,32 +63,80 @@
 								<p class="truncate text-sm font-medium text-foreground">
 									{item.fileName || 'Image'}
 								</p>
-								<p class="text-xs text-muted-foreground">{item.action || 'Processed'}</p>
+								<div class="flex items-center gap-2 text-xs text-muted-foreground">
+									<span>{item.action || 'Processed'}</span>
+									{#if item.isPermanent}
+										<span
+											class="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary"
+										>
+											<Pin class="size-2.5" /> Permanen
+										</span>
+									{:else if item.expiresAt}
+										<span
+											class="inline-flex items-center gap-1 rounded bg-yellow-100 px-1.5 py-0.5 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+										>
+											<Clock class="size-2.5" />
+											{formatExpiryDate(item.expiresAt)}
+										</span>
+									{/if}
+								</div>
 							</div>
 						</a>
-						<form
-							method="POST"
-							action="?/delete"
-							use:enhance={() => {
-								return async ({ update, result }) => {
-									await update();
-									if (result.type === 'success') {
-										toast.success('History item deleted');
-									} else if (result.type === 'failure') {
-										const msg = result.data?.message;
-										toast.error(typeof msg === 'string' ? msg : 'Failed to delete item');
-									}
-								};
-							}}
-						>
-							<input type="hidden" name="historyId" value={item.id} />
-							<button
-								type="submit"
-								class="text-muted-foreground transition-colors hover:text-destructive"
+
+						<div class="flex items-center gap-1">
+							<!-- Toggle Permanent -->
+							<form
+								method="POST"
+								action="?/togglePermanent"
+								use:enhance={() => {
+									return async ({ update, result }) => {
+										await update();
+										if (result.type === 'success') {
+											toast.success(
+												item.isPermanent ? 'Removed from permanent' : 'Marked as permanent'
+											);
+										}
+									};
+								}}
 							>
-								<IconClose class="h-5 w-5" />
-							</button>
-						</form>
+								<input type="hidden" name="historyId" value={item.id} />
+								<input type="hidden" name="isPermanent" value={(!item.isPermanent).toString()} />
+								<Button
+									type="submit"
+									variant="ghost"
+									size="icon"
+									class="h-8 w-8 {item.isPermanent ? 'text-primary' : 'text-muted-foreground'}"
+									title={item.isPermanent ? 'Hapus dari permanen' : 'Jadikan permanen'}
+								>
+									<Pin class="size-4" />
+								</Button>
+							</form>
+
+							<!-- Delete -->
+							<form
+								method="POST"
+								action="?/delete"
+								use:enhance={() => {
+									return async ({ update, result }) => {
+										await update();
+										if (result.type === 'success') {
+											toast.success('History item deleted');
+										} else if (result.type === 'failure') {
+											const msg = result.data?.message;
+											toast.error(typeof msg === 'string' ? msg : 'Failed to delete item');
+										}
+									};
+								}}
+							>
+								<input type="hidden" name="historyId" value={item.id} />
+								<button
+									type="submit"
+									class="text-muted-foreground transition-colors hover:text-destructive"
+								>
+									<IconClose class="h-5 w-5" />
+								</button>
+							</form>
+						</div>
 					</div>
 				</li>
 			{/each}
