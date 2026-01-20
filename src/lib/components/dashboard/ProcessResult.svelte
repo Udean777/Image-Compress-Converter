@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { IconCheck, IconDownload } from '$lib/components/icons';
+	import { IconCheck, IconDownload, IconCloud } from '$lib/components/icons';
 	import Compare from '$lib/components/Compare.svelte';
 	import { formatBytes } from '$lib/format';
 	import type { ProcessSuccess } from '$lib/types/image.types';
@@ -52,14 +52,28 @@
 			</span>
 			<span class="truncate text-[10px] text-muted-foreground"> Processed success </span>
 		</div>
-		<Button
-			href={result?.downloadUrl}
-			download
-			size="sm"
-			class="bg-emerald-600 text-xs font-semibold hover:bg-emerald-500"
-		>
-			<IconDownload class="mr-1.5 h-3.5 w-3.5" />
-			Download
-		</Button>
+		<div class="flex items-center gap-2">
+			{#if result.externalUrl}
+				<Button
+					href={result.externalUrl}
+					target="_blank"
+					variant="outline"
+					size="sm"
+					class="text-[10px] h-8 px-2"
+				>
+					<IconCloud class="mr-1 h-3 w-3" />
+					Drive
+				</Button>
+			{/if}
+			<Button
+				href={result?.downloadUrl}
+				download
+				size="sm"
+				class="bg-emerald-600 text-xs font-semibold hover:bg-emerald-500"
+			>
+				<IconDownload class="mr-1.5 h-3.5 w-3.5" />
+				Download
+			</Button>
+		</div>
 	</div>
 </div>

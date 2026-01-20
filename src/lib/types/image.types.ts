@@ -82,6 +82,7 @@ export interface IProcessImageOutput {
 	newSize: number;
 	format: string;
 	altText?: string;
+	externalUrl?: string;
 }
 
 export interface ProcessSuccess {
@@ -91,4 +92,5 @@ export interface ProcessSuccess {
 	newSize: number;
 	format: string;
 	stats: string;
+	externalUrl?: string;
 }

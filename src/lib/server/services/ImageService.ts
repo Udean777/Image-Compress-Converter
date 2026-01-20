@@ -223,6 +223,8 @@ export class ImageService {
 			})
 		);
 
+		let externalUrl: string | undefined;
+
 		if (externalConfig?.provider === 's3' && externalConfig.config) {
 			try {
 				const extS3 = new S3Client({
@@ -245,6 +247,20 @@ export class ImageService {
 			} catch (e) {
 				console.error('External S3 upload fail:', e);
 			}
+		} else if (externalConfig?.provider === 'google_drive' && externalConfig.config) {
+			try {
+				const { googleDriveService } = await import('./GoogleDriveService');
+				const driveResult = await googleDriveService.uploadFile(
+					input.userId,
+					externalConfig.config,
+					fileName,
+					resultBuffer,
+					`image/${outputFormat}`
+				);
+				externalUrl = driveResult.webViewLink || undefined;
+			} catch (e) {
+				console.error('Google Drive upload fail:', e);
+			}
 		}
 
 		const [publicUrl, downloadUrl] = await Promise.all([
@@ -258,7 +274,8 @@ export class ImageService {
 			downloadUrl,
 			originalSize,
 			newSize: resultBuffer.byteLength,
-			format: outputFormat
+			format: outputFormat,
+			externalUrl
 		};
 	}
 

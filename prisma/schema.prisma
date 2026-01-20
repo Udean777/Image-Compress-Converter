@@ -46,6 +46,7 @@ model History {
   outputFormat String
   creditsUsed  Int
   outputUrl    String
+  externalUrl  String?
   isPermanent  Boolean   @default(false)
   expiresAt    DateTime?
   createdAt    DateTime  @default(now())
