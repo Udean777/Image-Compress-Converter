@@ -1,18 +1,19 @@
 import { prisma } from '../db';
 import { LogExecution } from '../decorators';
+import bcrypt from 'bcryptjs';
 import {
 	AuthError,
 	type IAuthResponse,
 	type ILoginInput,
 	type IRegisterInput
 } from '$lib/types/auth.types';
-import type { PrismaClient } from '../../../generated/client';
+import type { PrismaClient } from '@prisma/client';
 
 export class AuthService {
 	private db: PrismaClient;
 
 	constructor(database: PrismaClient = prisma) {
-		this.db = prisma;
+		this.db = database;
 	}
 
 	@LogExecution
@@ -34,13 +35,13 @@ export class AuthService {
 			throw new Error(AuthError.EMAIL_EXISTS);
 		}
 
-		const hashedPassword = await Bun.password.hash(input.password);
+		const hashedPassword = await bcrypt.hash(input.password, 10);
 
 		const newUser = await this.db.user.create({
 			data: {
 				email: input.email,
 				password: hashedPassword,
-				credits: 10
+				credits: 15
 			}
 		});
 
@@ -52,29 +53,36 @@ export class AuthService {
 		};
 	}
 
-	@LogExecution
 	async login(input: ILoginInput): Promise<IAuthResponse> {
 		const user = await this.db.user.findUnique({
-			where: {
-				email: input.email
-			}
+			where: { email: input.email }
 		});
 
 		if (!user) {
 			throw new Error(AuthError.INVALID_CREDENTIALS);
 		}
 
-		const isValid = await Bun.password.verify(input.password, user.password);
+		let isValid = await bcrypt.compare(input.password, user.password);
+
+		// Fallback for legacy bcryptjs hashes
+		if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+			isValid = await bcrypt.compare(input.password, user.password);
+		}
+
 		if (!isValid) {
 			throw new Error(AuthError.INVALID_CREDENTIALS);
 		}
 
-		const sessionId = crypto.randomUUID();
-		const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+		// Issue JWT tokens
+		const { createAccessToken, createRefreshToken } = await import('../jwt');
+		const accessToken = await createAccessToken(user);
+		const refreshToken = await createRefreshToken(user.id);
+
+		const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days
 
 		await this.db.session.create({
 			data: {
-				id: sessionId,
+				id: refreshToken,
 				userId: user.id,
 				expiresAt
 			}
@@ -85,7 +93,8 @@ export class AuthService {
 		return {
 			success: true,
 			user: userWithoutPassword,
-			sessionId
+			accessToken,
+			refreshToken
 		};
 	}
 }

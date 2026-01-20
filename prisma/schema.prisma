@@ -15,12 +15,20 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  name      String?
+  avatarUrl String?
   password  String
-  credits   Int      @default(10)
+  credits   Int      @default(15)
   createdAt DateTime @default(now())
+  role      String   @default("USER")
+  isBanned  Boolean  @default(false)
 
-  sessions  Session[]
-  histories History[]
+  sessions           Session[]
+  histories          History[]
+  subscriptions      Subscription[]
+  payments           Payment[]
+  creditTransactions CreditTransaction[]
+  storageConfigs     StorageConfig[]
 }
 
 model Session {
@@ -31,14 +39,110 @@ model Session {
 }
 
 model History {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   userId       String
   fileName     String
   action       String
   outputFormat String
   creditsUsed  Int
   outputUrl    String
-  createdAt    DateTime @default(now())
+  isPermanent  Boolean   @default(false)
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemConfig {
+  id    String @id @default("global")
+  key   String @unique
+  value String
+}
+
+model PricingPlan {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  displayName   String
+  price         Int
+  currency      String         @default("IDR")
+  interval      String         @default("month")
+  credits       Int
+  features      Json?
+  isActive      Boolean        @default(true)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                   String      @id @default(uuid())
+  userId               String
+  planId               String
+  status               String      @default("active")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  creditsRemaining     Int         @default(0)
+  cancelledAt          DateTime?
+  createdAt            DateTime    @default(now())
+  stripeSubscriptionId String?     @unique
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 PricingPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id             String    @id @default(uuid())
+  userId         String
+  subscriptionId String?
+  amount         Int
+  currency       String    @default("IDR")
+  status         String
+  paymentType    String?
+  orderId        String    @unique
+  createdAt      DateTime  @default(now())
+  paidAt         DateTime?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+model CreditTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int
+  type        String
+  description String?
+  referenceId String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+model Announcement {
+  id        String    @id @default(uuid())
+  title     String
+  content   String
+  type      String    @default("info") // info, warning, success
+  isActive  Boolean   @default(true)
+  target    String    @default("all") // all, free, pro, etc.
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model StorageConfig {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String // 's3', 'google_drive', 'dropbox'
+  config    Json // Store credentials/tokens securely
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, provider])
 }

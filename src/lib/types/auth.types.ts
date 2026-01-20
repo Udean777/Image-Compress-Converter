@@ -1,4 +1,4 @@
-import type { User } from '../../generated/client';
+import type { User } from '@prisma/client';
 
 export interface IRegisterInput {
 	email: string;
@@ -13,7 +13,8 @@ export interface ILoginInput {
 export interface IAuthResponse {
 	success: boolean;
 	user?: Omit<User, 'password'>;
-	sessionId?: string;
+	accessToken?: string;
+	refreshToken?: string;
 	message?: string;
 }
 
