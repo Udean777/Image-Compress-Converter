@@ -25,8 +25,8 @@ export type ImageAction = (typeof IMAGE_ACTIONS)[number]['value'];
 export type ImageFormat = (typeof IMAGE_FORMATS)[number]['value'];
 
 export const TIER_LIMITS = {
-	free: { maxFileSize: 5 * 1024 * 1024, maxQuality: 85 },
+	free: { maxFileSize: 10 * 1024 * 1024, maxQuality: 85 },
 	starter: { maxFileSize: 10 * 1024 * 1024, maxQuality: 100 },
-	pro: { maxFileSize: 25 * 1024 * 1024, maxQuality: 100 },
-	business: { maxFileSize: 100 * 1024 * 1024, maxQuality: 100 }
+	pro: { maxFileSize: 20 * 1024 * 1024, maxQuality: 100 },
+	business: { maxFileSize: 20 * 1024 * 1024, maxQuality: 100 }
 } as const;

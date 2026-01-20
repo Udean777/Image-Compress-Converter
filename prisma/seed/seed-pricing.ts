@@ -20,7 +20,7 @@ const pricingPlans = [
 		features: JSON.stringify([
 			'🗜️ Compress & Convert',
 			'📏 Resize Images',
-			'📦 Max 5MB per File',
+			'📦 Max 10MB per File',
 			'🎁 15 Credits (sekali)'
 		])
 	},
@@ -51,7 +51,7 @@ const pricingPlans = [
 			'All Starter features',
 			'✂️ Remove Background',
 			'🖼️ Add Watermark',
-			'🏰 Max 25MB per File',
+			'🏰 Max 20MB per File',
 			'300 Credits/bulan'
 		])
 	},
@@ -67,7 +67,7 @@ const pricingPlans = [
 			'All Pro features',
 			'🔌 API Access (Soon)',
 			'🔄 Batch Processing',
-			'🏢 Max 100MB per File',
+			'🏢 Max 20MB per File',
 			'1000 Credits/bulan'
 		])
 	}

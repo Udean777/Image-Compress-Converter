@@ -81,8 +81,9 @@ export const actions: Actions = {
 		}
 
 		const currentCredits = await userService.getUserCredits(user.id);
-		if (currentCredits < files.length) {
-			return fail(400, { message: `Insufficient credits.` });
+		const totalCost = files.length * 5;
+		if (currentCredits < totalCost) {
+			return fail(400, { message: `Insufficient credits. Need ${totalCost} credits for ${files.length} images.` });
 		}
 
 		try {
@@ -146,7 +147,7 @@ export const actions: Actions = {
 
 			return {
 				success: true,
-				newCredits: currentCredits - files.length,
+				newCredits: currentCredits - files.length * 5,
 				results
 			};
 		} catch (error: any) {

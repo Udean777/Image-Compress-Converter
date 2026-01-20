@@ -31,7 +31,7 @@ export class UserService {
 		fileName: string,
 		outputUrl: string
 	) {
-		const COST_PER_ACTION = 1;
+		const COST_PER_ACTION = 5;
 
 		// Calculate expiration date (7 days from now)
 		const expiresAt = new Date();

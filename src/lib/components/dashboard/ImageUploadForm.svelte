@@ -236,7 +236,7 @@
 						<p class="text-muted-foreground">
 							Drag & drop or <span class="font-medium text-primary">browse</span>
 						</p>
-						<p class="text-sm text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
+						<p class="text-sm text-muted-foreground">PNG, JPG, WEBP up to {TIER_LIMITS[(user.planTier as keyof typeof TIER_LIMITS) || 'free'].maxFileSize / 1024 / 1024}MB</p>
 					</div>
 				{:else}
 					<div
