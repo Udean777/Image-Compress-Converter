@@ -15,7 +15,7 @@ A modern, premium image compression and conversion SaaS application built with S
 - **📦 Batch Download**: Download multiple processed images as a ZIP archive.
 - **🖼️ Gallery**: Personal gallery for storing and managing processed images.
 - **☁️ S3 Storage**: Secure, high-performance file storage using S3-compatible APIs (MinIO/AWS).
-- **📂 Google Drive Sync**: Automatically upload processed images to your Google Drive account.
+- **📂 Google Drive Sync**: Automatically upload processed images to your Google Drive account, with optional auto-connection during login.
 - **🔗 Cloud Connectors**: Integration with external cloud storage providers (S3, Google Drive).
 - **🌓 Dark Mode**: Sleek dark-mode interface by default for a premium creative experience.
 

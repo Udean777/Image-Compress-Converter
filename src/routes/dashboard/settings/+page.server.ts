@@ -136,6 +136,9 @@ export const actions: Actions = {
 			}
 
 			// 1. Verify current password
+			if (!user.password) {
+				return fail(400, { message: 'Please set a password for your account first' });
+			}
 			let isValid = await bcrypt.compare(currentPassword, user.password);
 
 			if (!isValid) {
@@ -178,10 +181,12 @@ export const actions: Actions = {
 			}
 
 			// Verify password
-			let isValid = await bcrypt.compare(password, user.password);
+			if (user.password) {
+				let isValid = await bcrypt.compare(password, user.password);
 
-			if (!isValid) {
-				return fail(400, { message: 'Incorrect password' });
+				if (!isValid) {
+					return fail(400, { message: 'Incorrect password' });
+				}
 			}
 
 			// Delete Stripe Customer (this will delete cards and subscriptions)

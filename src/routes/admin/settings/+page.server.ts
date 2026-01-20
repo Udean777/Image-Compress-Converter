@@ -76,6 +76,9 @@ export const actions: Actions = {
 		try {
 			const user = await db.user.findUnique({ where: { id: locals.user.id } });
 			if (!user) return fail(404, { message: 'User not found' });
+			if (!user.password) {
+				return fail(400, { message: 'This account does not have a password' });
+			}
 			let isValid = await bcrypt.compare(currentPassword, user.password);
 			if (!isValid) return fail(400, { message: 'Incorrect current password' });
 			const hashedPassword = await bcrypt.hash(newPassword, 10);
