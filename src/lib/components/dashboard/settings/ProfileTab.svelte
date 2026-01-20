@@ -11,7 +11,7 @@
 	let avatarImage = $state<string | null>(null);
 	let fileInput = $state<HTMLInputElement>();
 
-	let avatarUrl = $derived(user.avatarUrl ? `${user.avatarUrl}?t=${Date.now()}` : null);
+	let avatarUrl = $derived(user.avatarUrl);
 
 	function onFileChange(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -35,6 +35,7 @@
 				<img
 					src={avatarUrl}
 					alt="Avatar"
+					referrerpolicy="no-referrer"
 					class="h-full w-full rounded-full object-cover ring-4 ring-background"
 				/>
 			{:else}

@@ -23,6 +23,18 @@
 		const conn = data.connectors.find((c) => c.provider === provider);
 		return (conn?.config as any) || {};
 	}
+
+	import { page } from '$app/stores';
+
+	$effect(() => {
+		if ($page.url.searchParams.get('connect') === 'success') {
+			toast.success('Google Drive connected successfully!');
+			// Clean up URL
+			const newUrl = new URL($page.url);
+			newUrl.searchParams.delete('connect');
+			window.history.replaceState({}, '', newUrl);
+		}
+	});
 </script>
 
 <div class="space-y-8">

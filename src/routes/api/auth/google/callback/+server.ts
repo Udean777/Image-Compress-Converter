@@ -112,10 +112,12 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 				maxAge: 60 * 60 * 24 * 7 // 7 days
 			});
 
+			const redirectUrl = driveMode ? '/dashboard/connectors?connect=success' : '/dashboard';
+
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: '/dashboard'
+					Location: redirectUrl
 				}
 			});
 		}

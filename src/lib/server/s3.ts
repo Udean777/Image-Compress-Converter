@@ -77,7 +77,33 @@ export async function uploadFile(file: File, key: string, contentType: string): 
 	// For local MinIO, it's typically http://localhost:9000/bucket-name/key
 	// In production (AWS), it's https://bucket.s3.region.amazonaws.com/key
 	if (S3_ENDPOINT.includes('localhost') || S3_ENDPOINT.includes('minio')) {
-		return `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
+		const url = new URL(`${S3_ENDPOINT}/${S3_BUCKET}/${key}`);
+		if (url.hostname === 'minio') {
+			url.hostname = 'localhost';
+		}
+		return url.toString();
+	}
+
+	return `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${key}`;
+}
+
+export async function uploadBuffer(buffer: Buffer, key: string, contentType: string): Promise<string> {
+	const command = new PutObjectCommand({
+		Bucket: S3_BUCKET,
+		Key: key,
+		Body: buffer,
+		ContentType: contentType,
+		ACL: 'public-read'
+	});
+
+	await s3.send(command);
+
+	if (S3_ENDPOINT.includes('localhost') || S3_ENDPOINT.includes('minio')) {
+		const url = new URL(`${S3_ENDPOINT}/${S3_BUCKET}/${key}`);
+		if (url.hostname === 'minio') {
+			url.hostname = 'localhost';
+		}
+		return url.toString();
 	}
 
 	return `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${key}`;
