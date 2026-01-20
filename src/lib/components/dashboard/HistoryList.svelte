@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { IconClock, IconImage, IconClose, IconInbox } from '$lib/components/icons';
+	import { IconClock, IconImage, IconClose, IconInbox, IconCloud } from '$lib/components/icons';
 	import { toast } from 'svelte-sonner';
 	import { Pin, Clock } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -11,6 +11,7 @@
 		action?: string | null;
 		outputUrl?: string | null;
 		expiresAt?: Date | string | null;
+		externalUrl?: string | null;
 		isPermanent?: boolean;
 	}
 
@@ -55,33 +56,47 @@
 			{#each history as item (item.id)}
 				<li class="rounded-xl border border-border p-4 transition-all duration-200 hover:bg-accent">
 					<div class="flex items-center justify-between gap-3">
-						<a href={item.outputUrl} download class="flex min-w-0 flex-1 items-center gap-3">
-							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-								<IconImage class="h-5 w-5 text-muted-foreground" />
-							</div>
-							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-medium text-foreground">
-									{item.fileName || 'Image'}
-								</p>
-								<div class="flex items-center gap-2 text-xs text-muted-foreground">
-									<span>{item.action || 'Processed'}</span>
-									{#if item.isPermanent}
-										<span
-											class="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary"
-										>
-											<Pin class="size-2.5" /> Permanen
-										</span>
-									{:else if item.expiresAt}
-										<span
-											class="inline-flex items-center gap-1 rounded bg-yellow-100 px-1.5 py-0.5 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-										>
-											<Clock class="size-2.5" />
-											{formatExpiryDate(item.expiresAt)}
-										</span>
-									{/if}
+						<div class="flex min-w-0 flex-1 items-center gap-3">
+							<a href={item.outputUrl} download class="flex items-center gap-3 min-w-0">
+								<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+									<IconImage class="h-5 w-5 text-muted-foreground" />
 								</div>
-							</div>
-						</a>
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-medium text-foreground">
+										{item.fileName || 'Image'}
+									</p>
+									<div class="flex items-center gap-2 text-xs text-muted-foreground">
+										<span>{item.action || 'Processed'}</span>
+										{#if item.isPermanent}
+											<span
+												class="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary"
+											>
+												<Pin class="size-2.5" /> Permanen
+											</span>
+										{:else if item.expiresAt}
+											<span
+												class="inline-flex items-center gap-1 rounded bg-yellow-100 px-1.5 py-0.5 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+											>
+												<Clock class="size-2.5" />
+												{formatExpiryDate(item.expiresAt)}
+											</span>
+										{/if}
+									</div>
+								</div>
+							</a>
+
+							{#if item.externalUrl}
+								<a
+									href={item.externalUrl}
+									target="_blank"
+									class="inline-flex items-center gap-1 rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 text-[10px]"
+									title="View in Google Drive"
+								>
+									<IconCloud class="size-3" />
+									Drive
+								</a>
+							{/if}
+						</div>
 
 						<div class="flex items-center gap-1">
 							<!-- Toggle Permanent -->

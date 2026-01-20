@@ -130,7 +130,8 @@ export const actions: Actions = {
 						type,
 						targetFormat,
 						result.fileName,
-						result.publicUrl
+						result.publicUrl,
+						result.externalUrl
 					);
 
 					return {
@@ -140,6 +141,7 @@ export const actions: Actions = {
 						newSize: result.newSize,
 						format: result.format,
 						altText: result.altText,
+						externalUrl: result.externalUrl,
 						stats: `Saved ${(100 - (result.newSize / result.originalSize) * 100).toFixed(1)}%`
 					};
 				})

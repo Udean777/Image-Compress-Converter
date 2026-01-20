@@ -29,7 +29,8 @@ export class UserService {
 		action: string,
 		outputFormat: string,
 		fileName: string,
-		outputUrl: string
+		outputUrl: string,
+		externalUrl?: string
 	) {
 		const COST_PER_ACTION = 5;
 
@@ -56,6 +57,7 @@ export class UserService {
 					outputFormat,
 					fileName,
 					outputUrl,
+					externalUrl,
 					creditsUsed: COST_PER_ACTION,
 					expiresAt,
 					isPermanent: false

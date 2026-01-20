@@ -132,8 +132,8 @@
 			</CardContent>
 		</Card>
 
-		<!-- Google Drive Card (Coming Soon) -->
-		<Card class="relative opacity-70 grayscale-[0.5]">
+		<!-- Google Drive Card -->
+		<Card class="relative">
 			<CardHeader>
 				<div
 					class="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30"
@@ -144,11 +144,29 @@
 				<CardDescription>Direct upload to your G-Drive folders.</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div
-					class="flex items-center gap-2 rounded-lg bg-blue-500/10 p-2 text-[10px] text-blue-600 dark:text-blue-400"
-				>
-					<Info class="size-3" /> Coming Soon
-				</div>
+				{#if data.connectors.find((c) => c.provider === 'google_drive')}
+					<div class="space-y-4">
+						<div class="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-xs text-green-600">
+							<div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+							<span>Connected to Google Drive</span>
+						</div>
+						<form method="POST" action="?/delete" use:enhance>
+							<input type="hidden" name="provider" value="google_drive" />
+							<Button variant="destructive" size="sm" class="w-full gap-2">
+								<Trash2 class="size-4" /> Disconnect
+							</Button>
+						</form>
+					</div>
+				{:else}
+					<div class="space-y-4">
+						<p class="text-xs text-muted-foreground">
+							Connect to upload images to an "Image Studio" folder in your Drive.
+						</p>
+						<Button variant="outline" class="w-full gap-2" href="/api/auth/google/login">
+							<Plus class="size-4" /> Connect Google Drive
+						</Button>
+					</div>
+				{/if}
 			</CardContent>
 		</Card>
 
