@@ -62,15 +62,82 @@ export class AuthService {
 			throw new Error(AuthError.INVALID_CREDENTIALS);
 		}
 
+		if (!user.password) {
+			throw new Error(AuthError.INVALID_CREDENTIALS);
+		}
+
 		let isValid = await bcrypt.compare(input.password, user.password);
 
 		// Fallback for legacy bcryptjs hashes
-		if (!isValid && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+		if (
+			!isValid &&
+			user.password &&
+			(user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))
+		) {
 			isValid = await bcrypt.compare(input.password, user.password);
 		}
 
 		if (!isValid) {
 			throw new Error(AuthError.INVALID_CREDENTIALS);
+		}
+
+		// Issue JWT tokens
+		const { createAccessToken, createRefreshToken } = await import('../jwt');
+		const accessToken = await createAccessToken(user);
+		const refreshToken = await createRefreshToken(user.id);
+
+		const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days
+
+		await this.db.session.create({
+			data: {
+				id: refreshToken,
+				userId: user.id,
+				expiresAt
+			}
+		});
+
+		const { password, ...userWithoutPassword } = user;
+
+		return {
+			success: true,
+			user: userWithoutPassword,
+			accessToken,
+			refreshToken
+		};
+	}
+	@LogExecution
+	async handleOAuthUser(input: {
+		email: string;
+		name?: string;
+		avatarUrl?: string;
+		googleId: string;
+	}): Promise<IAuthResponse> {
+		let user = await this.db.user.findFirst({
+			where: {
+				OR: [{ googleId: input.googleId }, { email: input.email }]
+			}
+		});
+
+		if (!user) {
+			user = await this.db.user.create({
+				data: {
+					email: input.email,
+					name: input.name,
+					avatarUrl: input.avatarUrl,
+					googleId: input.googleId,
+					credits: 15
+				}
+			});
+		} else if (!user.googleId) {
+			// Link existing email account to Google ID
+			user = await this.db.user.update({
+				where: { id: user.id },
+				data: {
+					googleId: input.googleId,
+					avatarUrl: user.avatarUrl || input.avatarUrl,
+					name: user.name || input.name
+				}
+			});
 		}
 
 		// Issue JWT tokens
