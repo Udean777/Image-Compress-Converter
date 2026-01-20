@@ -15,7 +15,8 @@ A modern, premium image compression and conversion SaaS application built with S
 - **📦 Batch Download**: Download multiple processed images as a ZIP archive.
 - **🖼️ Gallery**: Personal gallery for storing and managing processed images.
 - **☁️ S3 Storage**: Secure, high-performance file storage using S3-compatible APIs (MinIO/AWS).
-- **🔗 Cloud Connectors**: Integration with external cloud storage providers.
+- **📂 Google Drive Sync**: Automatically upload processed images to your Google Drive account.
+- **🔗 Cloud Connectors**: Integration with external cloud storage providers (S3, Google Drive).
 - **🌓 Dark Mode**: Sleek dark-mode interface by default for a premium creative experience.
 
 ### Billing & Subscription
@@ -50,9 +51,10 @@ A modern, premium image compression and conversion SaaS application built with S
 | **UI Components**    | Shadcn-Svelte + Bits UI (Headless)            |
 | **Backend**          | SvelteKit Server, Bun Runtime                 |
 | **Database**         | PostgreSQL + Prisma ORM                       |
-| **Storage**          | S3 / MinIO                                    |
+| **Storage**          | S3 / MinIO, Google Drive                      |
 | **Payments**         | Stripe (Subscriptions, Webhooks)              |
 | **Image Processing** | Sharp, @imgly/background-removal-node         |
+| **Google APIs**      | googleapis (Drive v3)                         |
 | **Charts**           | Chart.js                                      |
 | **Animations**       | svelte-motion, canvas-confetti                |
 | **Date Handling**    | date-fns                                      |
@@ -97,6 +99,7 @@ A modern, premium image compression and conversion SaaS application built with S
    # - S3/MinIO credentials
    # - Stripe API keys (STRIPE_SECRET_KEY, PUBLIC_STRIPE_KEY)
    # - Stripe webhook secret
+   # - Google OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI)
    ```
 
 5. **Setup database**
@@ -165,6 +168,7 @@ src/
 │   │   │   ├── AuthService.ts
 │   │   │   ├── CloudConnectorService.ts
 │   │   │   ├── CreditService.ts
+│   │   │   ├── GoogleDriveService.ts
 │   │   │   ├── ImageService.ts
 │   │   │   ├── PricingService.ts
 │   │   │   ├── SubscriptionService.ts
@@ -195,6 +199,10 @@ src/
 │   │   └── upgrade/      # Plan upgrade page
 │   ├── maintenance/      # Maintenance page
 │   └── api/
+│       ├── auth/         # OAuth endpoints
+│       │   └── google/   # Google Drive OAuth
+│       │       ├── login/
+│       │       └── callback/
 │       ├── checkout/     # Checkout session
 │       ├── download/     # Single file download
 │       ├── download-batch/ # Batch ZIP download
@@ -249,12 +257,15 @@ src/
 
 ## 💳 Subscription Plans
 
-| Plan       | Credits | Price      | Features                        |
-| ---------- | ------- | ---------- | ------------------------------- |
-| Free       | 15      | Rp 0       | Basic compression & conversion  |
-| Starter    | 100     | Rp 49,000  | All features + Priority support |
-| Pro        | 500     | Rp 149,000 | Unlimited + API access          |
-| Enterprise | 2000    | Rp 499,000 | Custom + Dedicated support      |
+| Plan     | Credits | Price      | Features                        |
+| -------- | ------- | ---------- | ------------------------------- |
+| Free     | 15      | Rp 0       | Max 10MB, Basic transformations |
+| Starter  | 100     | Rp 39,000  | Max 10MB, All Basic features    |
+| Pro      | 300     | Rp 79,000  | Max 20MB, Remove BG, Watermark  |
+| Business | 1000    | Rp 199,000 | Max 20MB, Batch Processing      |
+
+> [!NOTE]
+> Every image processing action costs **5 credits**.
 
 ## 🧾 Invoice System
 
