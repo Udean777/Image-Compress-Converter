@@ -18,8 +18,10 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const codeVerifier = cookies.get('google_oauth_code_verifier');
 
 	if (!code || !state || !storedState || state !== storedState || !codeVerifier) {
+        console.error('SERVER: Invalid state or code. Code:', !!code, 'State:', !!state, 'Stored:', !!storedState, 'Verifier:', !!codeVerifier);
 		return new Response('Invalid state or code', { status: 400 });
 	}
+    console.log('SERVER: Validating auth code...');
 
 	try {
 		const tokens = await google.validateAuthorizationCode(code, codeVerifier);
@@ -40,8 +42,10 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 			email,
 			googleId,
 			name,
-			avatarUrl
 		});
+
+        console.log('SERVER: AuthService result:', result.success ? 'Success' : 'Failure');
+        if (result.user) console.log('SERVER: User ID:', result.user.id);
 
 		if (result.success && result.accessToken && result.refreshToken && result.user) {
 			const driveMode = cookies.get('google_oauth_drive_mode') === 'true';
@@ -120,11 +124,26 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 					Location: redirectUrl
 				}
 			});
+
 		}
 
-		return new Response('Authentication failed', { status: 500 });
+        console.error('SERVER: Auth result failed or missing tokens');
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: '/dashboard/connectors?connect=error'
+			}
+		});
 	} catch (e) {
-		console.error('Google OAuth error:', e);
-		return new Response('Internal error', { status: 500 });
+		console.error('SERVER: Google OAuth error caught:', e);
+        console.error('SERVER: Stack trace:', (e as Error).stack);
+		// Redirect with error to show toast
+        console.log('SERVER: Redirecting to error page');
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: '/dashboard/connectors?connect=error'
+			}
+		});
 	}
 };

@@ -1,12 +1,11 @@
-import { ImageService } from '$lib/server/services/ImageService';
-import { UserService } from '$lib/server/services/UserService';
+import { IMAGE_ACTIONS, isFeatureAllowed, TIER_LIMITS } from '$lib/constants';
 import { AIService } from '$lib/server/services/AIService';
 import { CloudConnectorService } from '$lib/server/services/CloudConnectorService';
+import { ImageService } from '$lib/server/services/ImageService';
+import { UserService } from '$lib/server/services/UserService';
+import { ProcessType, type ImageFormat } from '$lib/types/image.types';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { prisma } from '$lib/server/db';
-import { ProcessType, type ImageFormat } from '$lib/types/image.types';
-import { IMAGE_ACTIONS, isFeatureAllowed, TIER_LIMITS } from '$lib/constants';
 
 const imageService = new ImageService();
 const userService = new UserService();

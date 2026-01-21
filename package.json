@@ -20,7 +20,8 @@
 		"docker:build": "docker-compose up -d --build",
 		"docker:clean": "docker-compose down -v",
 		"db:seed": "bunx tsx prisma/seed/seed-pricing.ts && bunx tsx prisma/seed/seed-admin.ts",
-		"stripe:listen": "stripe listen --forward-to localhost:1234/api/webhook/stripe"
+		"stripe:listen": "stripe listen --forward-to localhost:1234/api/webhook/stripe",
+		"cleanup:imports": "bun scripts/remove-unused-imports.ts"
 	},
 	"devDependencies": {
 		"@internationalized/date": "^3.10.0",

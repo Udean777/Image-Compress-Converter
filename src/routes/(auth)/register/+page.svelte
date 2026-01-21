@@ -114,20 +114,8 @@
 		</div>
 
 		<div class="mt-6 space-y-4">
-			<div class="flex items-center justify-center gap-2">
-				<input
-					type="checkbox"
-					id="connectDrive"
-					class="accent-primary h-4 w-4 rounded border-gray-300"
-					bind:checked={connectDrive}
-				/>
-				<label for="connectDrive" class="text-sm text-muted-foreground select-none">
-					Auto connect Google Drive
-				</label>
-			</div>
-
 			<a
-				href="/api/auth/google{connectDrive ? '?connect_drive=true' : ''}"
+				href="/api/auth/google"
 				class="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-6 py-3.5 font-medium text-foreground transition-all duration-300 hover:bg-muted active:scale-[0.98]"
 			>
 				<svg class="h-5 w-5" viewBox="0 0 24 24">

@@ -1,5 +1,4 @@
 import { error } from '@sveltejs/kit';
-import { ImageService } from '$lib/server/services/ImageService';
 import archiver from 'archiver';
 import { PassThrough } from 'stream';
 

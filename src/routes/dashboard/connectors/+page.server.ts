@@ -4,16 +4,23 @@ import { CloudConnectorService } from '$lib/server/services/CloudConnectorServic
 
 const connectorService = new CloudConnectorService();
 
+function isProUser(locals: App.Locals) {
+	return locals.user?.planTier && locals.user.planTier !== 'free'; // Assuming 'free' is the default
+}
+
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
 
 	const connectors = await connectorService.getActiveConfigs(locals.user.id);
-	return { connectors };
+    const isPro = isProUser(locals); // hooks.server.ts populates planTier
+
+	return { connectors, isPro };
 };
 
 export const actions: Actions = {
 	save_s3: async ({ locals, request }) => {
 		if (!locals.user) throw error(401, 'Unauthorized');
+        if (!isProUser(locals)) return fail(403, { message: 'This feature requires a Pro subscription' });
 
 		const formData = await request.formData();
 		const endpoint = formData.get('endpoint') as string;
@@ -39,6 +46,12 @@ export const actions: Actions = {
 
 	delete: async ({ locals, request }) => {
 		if (!locals.user) throw error(401, 'Unauthorized');
+        // We probably shouldn't block deletion if they downgrade, but let's be strict for now or allow cleanup?
+        // User asked for "strict features for pro". But deleting usually should be allowed to cleanup data.
+        // Let's allow delete for now to avoid locking them in with data they can't remove?
+        // OR better, strict lock means they can't USE it.
+        // Let's block modification. If they are free, they shouldn't be here.
+        if (!isProUser(locals)) return fail(403, { message: 'This feature requires a Pro subscription' });
 
 		const formData = await request.formData();
 		const provider = formData.get('provider') as string;

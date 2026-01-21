@@ -2,8 +2,12 @@
 	import { IconUser, IconMoon, IconSun } from '$lib/components/icons';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sidebar from '$lib/components/ui/sidebar';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { mode, setMode } from 'mode-watcher';
 	import type { Snippet } from 'svelte';
+	import { page } from '$app/stores';
+	import { Search, ChevronRight, Zap } from '@lucide/svelte';
 
 	interface User {
 		name: string | null;
@@ -11,6 +15,7 @@
 		avatarUrl: string | null;
 		role: string;
 		createdAt: Date;
+		planTier?: string;
 	}
 
 	interface Props {
@@ -23,17 +28,72 @@
 	function toggleTheme() {
 		setMode(mode.current === 'dark' ? 'light' : 'dark');
 	}
+
+	function getBreadcrumbs(path: string) {
+		const parts = path.split('/').filter(Boolean);
+		return parts.map((part, index) => {
+			const href = '/' + parts.slice(0, index + 1).join('/');
+			const label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+			return { href, label, isLast: index === parts.length - 1 };
+		});
+	}
+
+	let breadcrumbs = $derived(getBreadcrumbs($page.url.pathname));
 </script>
 
 <header
-	class="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-4 overflow-x-hidden border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6"
+	class="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6"
 >
-	<Sidebar.Trigger />
+	<div class="flex items-center gap-4">
+		<Sidebar.Trigger />
+
+		<!-- Breadcrumbs (Hidden on mobile) -->
+		<nav class="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
+			{#each breadcrumbs as crumb, i}
+				{#if i > 0}
+					<ChevronRight class="size-4" />
+				{/if}
+				{#if crumb.isLast}
+					<span class="font-medium text-foreground">{crumb.label}</span>
+				{:else}
+					<a href={crumb.href} class="transition-colors hover:text-primary">{crumb.label}</a>
+				{/if}
+			{/each}
+		</nav>
+	</div>
+
+	<!-- Mobile Page Title (Visible only on mobile) -->
+	<div class="max-w-37.5 truncate font-semibold text-foreground md:hidden">
+		{breadcrumbs[breadcrumbs.length - 1]?.label || 'Dashboard'}
+	</div>
 
 	<div class="flex items-center gap-2">
+		<!-- Search Bar -->
+		<div class="relative hidden w-full max-w-sm lg:block">
+			<Search class="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+			<Input
+				type="search"
+				placeholder="Search..."
+				class="peer h-9 w-64 pl-9 text-sm transition-all duration-300 focus:w-80"
+			/>
+		</div>
+
+		<!-- Upgrade Button (Visible if free) -->
+		{#if user?.planTier === 'free'}
+			<Button
+				size="sm"
+				variant="default"
+				class="hidden gap-2 border-0 bg-linear-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 sm:flex"
+				href="/dashboard/upgrade"
+			>
+				<Zap class="size-3.5 fill-current" />
+				<span class="text-xs font-bold">Upgrade</span>
+			</Button>
+		{/if}
+
 		<button
 			onclick={toggleTheme}
-			class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
+			class="flex aspect-square h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary text-foreground transition-all hover:bg-accent hover:text-accent-foreground"
 			title={mode.current === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
 		>
 			{#if mode.current === 'dark'}
